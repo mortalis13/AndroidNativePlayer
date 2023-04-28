@@ -30,6 +30,7 @@ android {
     compileSdk 33
     
     defaultConfig {
+        namespace "org.home.oboeplayer"
         applicationId "org.home.oboeplayer"
         minSdk 21
         targetSdk 32
@@ -55,8 +56,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
         jvmTarget = '1.8'
@@ -101,4 +102,12 @@ dependencies {
     implementation 'androidx.activity:activity-compose:1.3.1'
     
     implementation 'androidx.appcompat:appcompat:1.6.0-rc01'
+}
+
+def appStart() {
+  return "adb shell am start -n ${android.namespace}/.MainActivity".split()
+}
+
+task appStart(type: Exec, dependsOn: 'installDebug') {
+  commandLine appStart()
 }
