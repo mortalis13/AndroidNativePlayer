@@ -10,7 +10,6 @@ static const char *TAG = "OboePlayerJNI";
 
 #include "SimpleNoiseMaker.h"
 
-// JNI functions are "C" calling convention
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,14 +44,10 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
 }
 
 
-JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv * /* env */, jobject) {
+JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv *env, jobject obj) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", __func__);
-    
-    // We need to close() even if the stop() fails because we need to delete the resources.
     Result result1 = sPlayer.stop();
     Result result2 = sPlayer.close();
-    
-    // Return first failure code.
     return (jint) ((result1 != Result::OK) ? result1 : result2);
 }
 

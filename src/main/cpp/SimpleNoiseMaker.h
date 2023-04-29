@@ -1,4 +1,3 @@
-
 #ifndef SIMPLE_NOISE_MAKER_H
 #define SIMPLE_NOISE_MAKER_H
 
@@ -9,16 +8,10 @@
 
 using namespace std;
 
-/**
- * Play white noise using Oboe.
- */
+
 class SimpleNoiseMaker {
 public:
 
-    /**
-     * Open an Oboe stream.
-     * @return OK or negative error code.
-     */
     oboe::Result open();
     oboe::Result start();
     oboe::Result stop();
@@ -57,6 +50,7 @@ private:
     private:
         SimpleNoiseMaker *mParent;
     };
+    
 
     std::shared_ptr<oboe::AudioStream> mStream;
     std::shared_ptr<MyDataCallback> mDataCallback;
