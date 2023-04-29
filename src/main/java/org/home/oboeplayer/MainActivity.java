@@ -43,11 +43,12 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioPlayer = new AudioPlayer();
     
-    // String audioPath = "/storage/emulated/0/_temp/ez_snare_raw.wav";
-    // String audioPath = "/storage/emulated/0/_temp/SnareDrum_raw.wav";
-    // String audioPath = "/storage/emulated/0/_temp/HiHat_Closed_raw.wav";
-    // String audioPath = "/storage/emulated/0/_temp/sine_440_hz_raw.wav";
-    String audioPath = "/storage/emulated/0/_temp/stereo_sine_raw.wav";
+    // String audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
+    // String audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
+    // String audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
+    String audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
+    // String audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
+    
     audioPlayer.setupAudio(audioPath);
   }
   

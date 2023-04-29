@@ -13,68 +13,75 @@ using namespace oboe;
 class FilePlayer {
 public:
     
-    string audioPath;
-    bool isPlaying;
-    int dataChannels;
-    
-    uint16_t* fileBuffer;
-    int samplesProcessed;
-    int totalSamples;
-    int nextSampleId;
+  bool isPlaying;
+  int dataChannels;
   
-    FilePlayer() {
-      fileBuffer = NULL;
-      isPlaying = false;
-      dataChannels = 0;
-      samplesProcessed = 0;
-    }
+  float* mSampleData;
+  int samplesProcessed;
+  int totalSamples;
+  int nextSampleId;
+  
+  int32_t mNumChannels;
+  int32_t mSampleRate;
+  int32_t mNumSamples;
 
-    oboe::Result open();
-    oboe::Result start();
-    oboe::Result stop();
-    oboe::Result close();
-    
-    bool loadFile(string audioPath);
-    void play();
+  FilePlayer() {
+    mSampleData = NULL;
+    isPlaying = false;
+    dataChannels = 0;
+    samplesProcessed = 0;
+  }
 
-    ifstream file;
+  oboe::Result open();
+  oboe::Result start();
+  oboe::Result stop();
+  oboe::Result close();
+  
+  bool loadFile(string audioPath);
+  void play();
+
+  ifstream file;
 
 private:
 
-    class MyDataCallback : public AudioStreamDataCallback {
-    public:
-        MyDataCallback(FilePlayer *parent) : mParent(parent) {
-          currentSampleId = 0;
-        }
-        
-        DataCallbackResult onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) override;
+  void resampleData(int destSampleRate);
+
+
+class MyDataCallback : public AudioStreamDataCallback {
+public:
+    MyDataCallback(FilePlayer *parent) : mParent(parent) {
+      currentSampleId = 0;
+    }
     
-    private:
-        FilePlayer *mParent;
-        int currentSampleId;
-    };
+    DataCallbackResult onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) override;
+
+private:
+    FilePlayer *mParent;
+    int currentSampleId;
+};
 
 
-    class MyErrorCallback : public AudioStreamErrorCallback {
-    public:
-        MyErrorCallback(FilePlayer *parent) : mParent(parent) {}
+class MyErrorCallback : public AudioStreamErrorCallback {
+public:
+    MyErrorCallback(FilePlayer *parent) : mParent(parent) {}
 
-        virtual ~MyErrorCallback() {
-        }
+    virtual ~MyErrorCallback() {
+    }
 
-        void onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) override;
+    void onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) override;
 
-    private:
-        FilePlayer *mParent;
-    };
-    
+private:
+    FilePlayer *mParent;
+};
 
-    shared_ptr<AudioStream> mStream;
-    
-    shared_ptr<MyDataCallback> mDataCallback;
-    shared_ptr<MyErrorCallback> mErrorCallback;
-    
-    static constexpr int kChannelCount = 2;
+
+  static constexpr int kChannelCount = 2;
+  
+  shared_ptr<AudioStream> mStream;
+  
+  shared_ptr<MyDataCallback> mDataCallback;
+  shared_ptr<MyErrorCallback> mErrorCallback;
+
 };
 
 #endif //FILE_PLAYER_H

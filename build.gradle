@@ -20,12 +20,14 @@ allprojects {
 
 android {
     compileSdk 33
+    // ndkVersion "25.1.8937393"
     
     defaultConfig {
         namespace "org.home.oboeplayer"
         
-        minSdk 21
-        targetSdk 32
+        minSdkVersion 30
+        targetSdkVersion 33
+        
         versionCode 1
         versionName "1.0"
 

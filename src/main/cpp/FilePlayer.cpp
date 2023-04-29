@@ -1,10 +1,18 @@
+#include "FilePlayer.h"
+
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
 
 #include <android/log.h>
 
-#include "FilePlayer.h"
+#include <stream/MemInputStream.h>
+#include <wav/WavStreamReader.h>
+
+#include <resampler/MultiChannelResampler.h>
+
+using namespace parselib;
+using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
 
 static const char *TAG = "FilePlayer";
@@ -20,11 +28,12 @@ oboe::Result FilePlayer::open() {
 
   builder.setSharingMode(SharingMode::Exclusive);
   builder.setPerformanceMode(PerformanceMode::LowLatency);
-  builder.setFormat(AudioFormat::I16);
+  builder.setFormat(AudioFormat::Float);
   builder.setChannelCount(kChannelCount);
   builder.setDataCallback(mDataCallback);
   builder.setErrorCallback(mErrorCallback);
   builder.setSampleRate(44100);
+  builder.setSampleRateConversionQuality(SampleRateConversionQuality::Medium);
 
   oboe::Result result = builder.openStream(mStream);
   return result;
@@ -49,13 +58,10 @@ void FilePlayer::play() {
 }
 
 bool FilePlayer::loadFile(string audioPath) {
-  this->audioPath = audioPath;
-  this->dataChannels = 2;
-  
-  file.open(this->audioPath, ios::binary | ios::ate);
+  file.open(audioPath, ios::binary | ios::ate);
   
   if (!file.good()) {
-    __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open file: %s => %s", this->audioPath.c_str(), strerror(errno));
+    __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open file: %s => %s", audioPath.c_str(), strerror(errno));
     return false;
   }
   
@@ -64,39 +70,99 @@ bool FilePlayer::loadFile(string audioPath) {
   __android_log_print(ANDROID_LOG_INFO, TAG, "Size: %d", size);
   file.seekg(0);
   
-  if (fileBuffer != NULL) {
-    delete fileBuffer;
-  }
-  fileBuffer = new uint16_t[size];
+  unsigned char* buf = new unsigned char[size];
   
-  file.read((char*) fileBuffer, size);
+  file.read((char*) buf, size);
   file.close();
   
+  MemInputStream stream(buf, size);
+  WavStreamReader reader(&stream);
+  reader.parse();
+  
+  this->mNumChannels = reader.getNumChannels();
+  __android_log_print(ANDROID_LOG_INFO, TAG, "Audio channels: %d", this->mNumChannels);
+  
+  reader.positionToAudio();
+
+  mSampleRate = reader.getSampleRate();
+  mNumSamples = reader.getNumSampleFrames() * reader.getNumChannels();
+  
+  if (mSampleData != NULL) {
+    delete[] mSampleData;
+  }
+  mSampleData = new float[mNumSamples];
+  
+  reader.getDataFloat(mSampleData, reader.getNumSampleFrames());
+  
+  this->resampleData(mStream->getSampleRate());
+  
+  delete[] buf;
   return true;
+}
+
+
+void FilePlayer::resampleData(int destSampleRate) {
+  if (mSampleRate == destSampleRate) {
+    __android_log_print(ANDROID_LOG_INFO, TAG, "No need to resemple from %d to %d", mSampleRate, destSampleRate);
+    return;
+  }
+  __android_log_print(ANDROID_LOG_INFO, TAG, "Resampling from %d to %d", mSampleRate, destSampleRate);
+  
+  double temp = ((double) mNumSamples * (double) destSampleRate) / (double) mSampleRate;
+  int32_t numOutFramesAllocated = (int32_t) (temp + 0.5);
+  numOutFramesAllocated += 8;
+
+  MultiChannelResampler *resampler = MultiChannelResampler::make(mNumChannels, mSampleRate, destSampleRate, MultiChannelResampler::Quality::Medium);
+  
+  float* inputBuffer = mSampleData;
+  float* outputBuffer = new float[numOutFramesAllocated];
+  float* resampledData = outputBuffer;
+
+  int numOutputSamples = 0;
+  int inputSamplesLeft = mNumSamples;
+  
+  while (inputSamplesLeft > 0 && numOutputSamples < numOutFramesAllocated) {
+      if (resampler->isWriteNeeded()) {
+          resampler->writeNextFrame(inputBuffer);
+          inputBuffer += mNumChannels;
+          inputSamplesLeft -= mNumChannels;
+      }
+      else {
+          resampler->readNextFrame(outputBuffer);
+          outputBuffer += mNumChannels;
+          numOutputSamples += mNumChannels;
+      }
+  }
+  
+  delete resampler;
+  delete[] mSampleData;
+
+  mSampleData = resampledData;
+  mNumSamples = numOutputSamples;
+  mSampleRate = destSampleRate;
 }
 
 
 DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
   if (!mParent->isPlaying) {
-    memset(audioData, 0, numFrames * kChannelCount * sizeof(uint16_t));
+    memset(audioData, 0, numFrames * kChannelCount * sizeof(float));
     return DataCallbackResult::Continue;
   }
   
-  uint16_t* stream = (uint16_t*) audioData;
+  float* stream = (float*) audioData;
   
   for (int i = 0; i < numFrames; i++) {
-    uint16_t sample = 0;
+    float sample = 0;
     
-    for (int ch = 0; ch < mParent->dataChannels; ch++) {
+    for (int ch = 0; ch < mParent->mNumChannels; ch++) {
       if (mParent->nextSampleId < mParent->totalSamples) {
-        sample = mParent->fileBuffer[mParent->nextSampleId++];
+        sample = mParent->mSampleData[mParent->nextSampleId++];
+        mParent->samplesProcessed++;
       }
-      
       *stream++ = sample;
-      mParent->samplesProcessed++;
     }
     
-    if (mParent->dataChannels == 1) {
+    if (mParent->mNumChannels == 1) {
       *stream++ = sample;
     }
   }
