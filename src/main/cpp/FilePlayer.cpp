@@ -77,9 +77,8 @@ bool FilePlayer::setFile(string audioPath) {
 
 
 DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
-  // memset(audioData, 0, numFrames * kChannelCount * sizeof(uint16_t));
-
   if (!mParent->isPlaying) {
+    memset(audioData, 0, numFrames * kChannelCount * sizeof(uint16_t));
     return DataCallbackResult::Continue;
   }
   
@@ -103,29 +102,9 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
   }
   
   if (mParent->nextSampleId >= mParent->totalSamples) {
-    // mParent->nextSampleId = 0;
     mParent->isPlaying = false;
     __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", mParent->samplesProcessed, mParent->nextSampleId);
   }
-  
-  
-  // for (int i = 0; i < numFrames; i++) {
-  //   uint16_t sample = 0;
-    
-  //   for (int ch = 0; ch < mParent->dataChannels; ch++) {
-  //     if (!mParent->file.read((char*) &sample, 2)) {
-  //       mParent->isPlaying = false;
-  //       return DataCallbackResult::Continue;
-  //     }
-      
-  //     __android_log_print(ANDROID_LOG_INFO, TAG, "Writing frame %d, sample: 0x%04x", i, sample);
-  //     *stream++ = sample;
-  //   }
-    
-  //   if (mParent->dataChannels == 1) {
-  //     *stream++ = sample;
-  //   }
-  // }
   
   return DataCallbackResult::Continue;
 }
