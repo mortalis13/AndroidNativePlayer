@@ -4,15 +4,15 @@
 
 #include <android/log.h>
 
-#include "SimpleNoiseMaker.h"
+#include "FilePlayer.h"
 
 using namespace oboe;
 
 
-static const char *TAG = "SimpleNoiseMaker";
+static const char *TAG = "FilePlayer";
 
 
-oboe::Result SimpleNoiseMaker::open() {
+oboe::Result FilePlayer::open() {
   isPlaying = false;
   
   mDataCallback = std::make_shared<MyDataCallback>(this);
@@ -32,26 +32,26 @@ oboe::Result SimpleNoiseMaker::open() {
   return result;
 }
 
-oboe::Result SimpleNoiseMaker::start() {
+oboe::Result FilePlayer::start() {
   return mStream->requestStart();
 }
 
-oboe::Result SimpleNoiseMaker::stop() {
+oboe::Result FilePlayer::stop() {
   return mStream->requestStop();
 }
 
-oboe::Result SimpleNoiseMaker::close() {
+oboe::Result FilePlayer::close() {
   file.close();
   return mStream->close();
 }
 
-void SimpleNoiseMaker::play() {
+void FilePlayer::play() {
   if (file.tellg() == -1) file.clear();
   file.seekg(0);
   isPlaying = true;
 }
 
-bool SimpleNoiseMaker::setFile(string audioPath) {
+bool FilePlayer::setFile(string audioPath) {
   this->audioPath = audioPath;
   file.open(this->audioPath, ios::binary | ios::ate);
   
@@ -78,7 +78,7 @@ bool SimpleNoiseMaker::setFile(string audioPath) {
  * @param numFrames number of frames needed
  * @return
  */
-DataCallbackResult SimpleNoiseMaker::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
+DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
   if (!mParent->isPlaying) {
     return oboe::DataCallbackResult::Continue;
   }
@@ -95,7 +95,7 @@ DataCallbackResult SimpleNoiseMaker::MyDataCallback::onAudioReady(AudioStream *a
 }
 
 
-void SimpleNoiseMaker::MyErrorCallback::onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) {
+void FilePlayer::MyErrorCallback::onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) {
   __android_log_print(ANDROID_LOG_ERROR, TAG, "%s() - error = %s", __func__, oboe::convertToText(error));
   if (mParent->open() == Result::OK) {
     mParent->start();

@@ -3,7 +3,7 @@ project(oboe-player LANGUAGES CXX)
 
 find_package(oboe REQUIRED CONFIG)
 
-set (APP_SOURCES SimpleNoiseMaker.cpp OboePlayerJNI.cpp)
+set (APP_SOURCES FilePlayer.cpp OboePlayerJNI.cpp)
 
 add_library(oboeplayer SHARED ${APP_SOURCES})
 

@@ -1,5 +1,5 @@
-#ifndef SIMPLE_NOISE_MAKER_H
-#define SIMPLE_NOISE_MAKER_H
+#ifndef FILE_PLAYER_H
+#define FILE_PLAYER_H
 
 #include <string>
 #include <fstream>
@@ -9,7 +9,7 @@
 using namespace std;
 
 
-class SimpleNoiseMaker {
+class FilePlayer {
 public:
 
     oboe::Result open();
@@ -26,21 +26,21 @@ private:
 
     class MyDataCallback : public oboe::AudioStreamDataCallback {
     public:
-        MyDataCallback(SimpleNoiseMaker *parent) : mParent(parent) {
+        MyDataCallback(FilePlayer *parent) : mParent(parent) {
           currentSampleId = 0;
         }
         
         oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) override;
     
     private:
-        SimpleNoiseMaker *mParent;
+        FilePlayer *mParent;
         int currentSampleId;
     };
 
 
     class MyErrorCallback : public oboe::AudioStreamErrorCallback {
     public:
-        MyErrorCallback(SimpleNoiseMaker *parent) : mParent(parent) {}
+        MyErrorCallback(FilePlayer *parent) : mParent(parent) {}
 
         virtual ~MyErrorCallback() {
         }
@@ -48,7 +48,7 @@ private:
         void onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) override;
 
     private:
-        SimpleNoiseMaker *mParent;
+        FilePlayer *mParent;
     };
     
 
@@ -62,4 +62,4 @@ private:
     static constexpr int kChannelCount = 1;
 };
 
-#endif //SIMPLE_NOISE_MAKER_H
+#endif //FILE_PLAYER_H

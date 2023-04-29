@@ -8,7 +8,7 @@ static const char *TAG = "OboePlayerJNI";
 
 #include <android/log.h>
 
-#include "SimpleNoiseMaker.h"
+#include "FilePlayer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,7 @@ extern "C" {
 using namespace oboe;
 
 // Use a static object so we don't have to worry about it getting deleted at the wrong time.
-static SimpleNoiseMaker sPlayer;
+static FilePlayer sPlayer;
 
 
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *env, jclass obj) {
