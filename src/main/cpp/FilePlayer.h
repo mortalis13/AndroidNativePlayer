@@ -7,6 +7,7 @@
 #include "oboe/Oboe.h"
 
 using namespace std;
+using namespace oboe;
 
 
 class FilePlayer {
@@ -24,13 +25,13 @@ public:
 
 private:
 
-    class MyDataCallback : public oboe::AudioStreamDataCallback {
+    class MyDataCallback : public AudioStreamDataCallback {
     public:
         MyDataCallback(FilePlayer *parent) : mParent(parent) {
           currentSampleId = 0;
         }
         
-        oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) override;
+        DataCallbackResult onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) override;
     
     private:
         FilePlayer *mParent;
@@ -38,28 +39,30 @@ private:
     };
 
 
-    class MyErrorCallback : public oboe::AudioStreamErrorCallback {
+    class MyErrorCallback : public AudioStreamErrorCallback {
     public:
         MyErrorCallback(FilePlayer *parent) : mParent(parent) {}
 
         virtual ~MyErrorCallback() {
         }
 
-        void onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) override;
+        void onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) override;
 
     private:
         FilePlayer *mParent;
     };
     
 
-    std::shared_ptr<oboe::AudioStream> mStream;
-    std::shared_ptr<MyDataCallback> mDataCallback;
-    std::shared_ptr<MyErrorCallback> mErrorCallback;
+    shared_ptr<AudioStream> mStream;
+    
+    shared_ptr<MyDataCallback> mDataCallback;
+    shared_ptr<MyErrorCallback> mErrorCallback;
     
     string audioPath;
     bool isPlaying;
+    int dataChannels;
 
-    static constexpr int kChannelCount = 1;
+    static constexpr int kChannelCount = 2;
 };
 
 #endif //FILE_PLAYER_H

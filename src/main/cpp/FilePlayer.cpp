@@ -6,8 +6,6 @@
 
 #include "FilePlayer.h"
 
-using namespace oboe;
-
 
 static const char *TAG = "FilePlayer";
 
@@ -15,14 +13,14 @@ static const char *TAG = "FilePlayer";
 oboe::Result FilePlayer::open() {
   isPlaying = false;
   
-  mDataCallback = std::make_shared<MyDataCallback>(this);
-  mErrorCallback = std::make_shared<MyErrorCallback>(this);
+  mDataCallback = make_shared<MyDataCallback>(this);
+  mErrorCallback = make_shared<MyErrorCallback>(this);
 
   AudioStreamBuilder builder;
 
-  builder.setSharingMode(oboe::SharingMode::Exclusive);
-  builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
-  builder.setFormat(oboe::AudioFormat::I16);
+  builder.setSharingMode(SharingMode::Exclusive);
+  builder.setPerformanceMode(PerformanceMode::LowLatency);
+  builder.setFormat(AudioFormat::I16);
   builder.setChannelCount(kChannelCount);
   builder.setDataCallback(mDataCallback);
   builder.setErrorCallback(mErrorCallback);
@@ -53,10 +51,12 @@ void FilePlayer::play() {
 
 bool FilePlayer::setFile(string audioPath) {
   this->audioPath = audioPath;
+  this->dataChannels = 1;
+  
   file.open(this->audioPath, ios::binary | ios::ate);
   
   if (!file.good()) {
-    __android_log_print(ANDROID_LOG_ERROR, TAG, "[ERROR]: Failed to open file: %s => %s", this->audioPath.c_str(), strerror(errno));
+    __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open file: %s => %s", this->audioPath.c_str(), strerror(errno));
     return false;
   }
   
@@ -80,22 +80,59 @@ bool FilePlayer::setFile(string audioPath) {
  */
 DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
   if (!mParent->isPlaying) {
-    return oboe::DataCallbackResult::Continue;
+    return DataCallbackResult::Continue;
   }
   
-  uint8_t * stream = (uint8_t*) audioData;
-  
-  int size = numFrames * 2 * kChannelCount;
-  
-  if (!mParent->file.read((char*) stream, size)) {
-    // __android_log_print(ANDROID_LOG_INFO, TAG, "Last read / requested: %d / %d", (int) mParent->file.gcount(), size);
+  uint16_t* stream = (uint16_t*) audioData;
+
+  for (int i = 0; i < numFrames; i++) {
+    uint16_t sample = 0;
+    
+    for (int ch = 0; ch < mParent->dataChannels; ch++) {
+      if (!mParent->file.read((char*) &sample, 2)) {
+        mParent->isPlaying = false;
+        return DataCallbackResult::Continue;
+      }
+      
+      *stream++ = sample;
+    }
+    
+    if (mParent->dataChannels == 1) {
+      *stream++ = sample;
+    }
   }
   
-  return oboe::DataCallbackResult::Continue;
+  
+  // for (int i = 0; i < numFrames; i++) {
+  //   mParent->file.read((char*) stream, 2);
+  //   stream[1] = stream[0];
+  //   stream += 2;
+  // }
+  
+  
+  // char* stream = (char*) audioData;
+  // int size = numFrames * 2 * mParent->dataChannels;
+  
+  // int x = 0;
+  // for (int i = 0; i < size; i+=2) {
+  //   char buf1;
+  //   char buf2;
+    
+  //   if (!mParent->file.read(&buf1, 1)) break;
+  //   if (!mParent->file.read(&buf2, 1)) break;
+    
+  //   stream[x++] = buf1;
+  //   stream[x++] = buf2;
+
+  //   stream[x++] = buf1;
+  //   stream[x++] = buf2;
+  // }
+  
+  return DataCallbackResult::Continue;
 }
 
 
-void FilePlayer::MyErrorCallback::onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) {
+void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
   __android_log_print(ANDROID_LOG_ERROR, TAG, "%s() - error = %s", __func__, oboe::convertToText(error));
   if (mParent->open() == Result::OK) {
     mParent->start();

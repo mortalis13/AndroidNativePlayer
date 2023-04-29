@@ -4,11 +4,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-static const char *TAG = "OboePlayerJNI";
-
 #include <android/log.h>
 
 #include "FilePlayer.h"
+
+
+static const char *TAG = "OboePlayerJNI";
+
 
 #ifdef __cplusplus
 extern "C" {
