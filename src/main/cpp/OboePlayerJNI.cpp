@@ -20,24 +20,31 @@ using namespace oboe;
 // Use a static object so we don't have to worry about it getting deleted at the wrong time.
 static SimpleNoiseMaker sPlayer;
 
-/**
- * Native (JNI) implementation of AudioPlayer.startAudiostreamNative()
- */
-// JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj, jstring jaudioPath, jobject jassetManager) {
-JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj) {
+
+JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *env, jclass obj) {
+  sPlayer.play();
+  return 0;
+}
+
+
+JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj, jstring jaudioPath) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", __func__);
     
     Result result = sPlayer.open();
     if (result == Result::OK) {
-        result = sPlayer.start();
+      bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/ez_snare_raw.wav");
+      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/SnareDrum_raw.wav");
+      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/HiHat_Closed_raw.wav");
+      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/sine_440_hz_raw.wav");
+      
+      if (!fileResult) return fileResult;
+      result = sPlayer.start();
     }
     
     return (jint) result;
 }
 
-/**
- * Native (JNI) implementation of AudioPlayer.stopAudioStreamNative()
- */
+
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv * /* env */, jobject) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", __func__);
     
@@ -48,6 +55,7 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNativ
     // Return first failure code.
     return (jint) ((result1 != Result::OK) ? result1 : result2);
 }
+
 #ifdef __cplusplus
 }
 #endif

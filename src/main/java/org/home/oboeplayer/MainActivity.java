@@ -3,6 +3,7 @@ package org.home.oboeplayer;
 import android.content.Context;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.view.MotionEvent;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -41,15 +42,20 @@ public class MainActivity extends AppCompatActivity {
   
   private void init() {
     audioPlayer = new AudioPlayer();
+    
+    String audioPath = "";
+    audioPlayer.setFile(audioPath);
+    
+    audioPlayer.setPlaybackEnabled(true);
   }
   
   private void configUI() {
     TextView activeTitle = findViewById(R.id.activeTitle);
-    activeTitle.setOnClickListener(v -> {
-      log("text clicked");
-      
-      isPlaying = !isPlaying;
-      audioPlayer.setPlaybackEnabled(isPlaying);
+    activeTitle.setOnTouchListener((view, event) -> {
+      if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        audioPlayer.play();
+      }
+      return true;
     });
   }
   

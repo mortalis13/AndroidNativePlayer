@@ -9,4 +9,4 @@ add_library(oboeplayer SHARED ${APP_SOURCES})
 
 target_link_libraries(oboeplayer oboe::oboe android log)
 
-target_compile_options(oboeplayer PRIVATE -Wall -Werror "$<$<CONFIG:RELEASE>:-Ofast>")
+target_compile_options(oboeplayer PRIVATE -Wall -Wno-unused-private-field -Wno-unused-variable -Werror "$<$<CONFIG:RELEASE>:-Ofast>")
