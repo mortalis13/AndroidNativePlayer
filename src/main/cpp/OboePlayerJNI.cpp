@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <string>
+
 #include <android/log.h>
 
 #include "FilePlayer.h"
@@ -16,7 +18,8 @@ static const char *TAG = "OboePlayerJNI";
 extern "C" {
 #endif
 
-using namespace oboe;
+using namespace std;
+
 
 // Use a static object so we don't have to worry about it getting deleted at the wrong time.
 static FilePlayer sPlayer;
@@ -31,13 +34,13 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj, jstring jaudioPath) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", __func__);
     
-    Result result = sPlayer.open();
-    if (result == Result::OK) {
-      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/ez_snare_raw.wav");
-      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/SnareDrum_raw.wav");
-      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/HiHat_Closed_raw.wav");
-      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/sine_440_hz_raw.wav");
-      bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/stereo_sine_raw.wav");
+    oboe::Result result = sPlayer.open();
+    if (result == oboe::Result::OK) {
+      const char* audioPathBytes = env->GetStringUTFChars(jaudioPath, 0);
+      string audioPath(audioPathBytes);
+      env->ReleaseStringUTFChars(jaudioPath, audioPathBytes);
+      
+      bool fileResult = sPlayer.loadFile(audioPath);
       
       if (!fileResult) return fileResult;
       result = sPlayer.start();
@@ -49,9 +52,9 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
 
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv *env, jobject obj) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", __func__);
-    Result result1 = sPlayer.stop();
-    Result result2 = sPlayer.close();
-    return (jint) ((result1 != Result::OK) ? result1 : result2);
+    oboe::Result result1 = sPlayer.stop();
+    oboe::Result result2 = sPlayer.close();
+    return (jint) ((result1 != oboe::Result::OK) ? result1 : result2);
 }
 
 #ifdef __cplusplus

@@ -48,7 +48,7 @@ void FilePlayer::play() {
   this->nextSampleId = 0;
 }
 
-bool FilePlayer::setFile(string audioPath) {
+bool FilePlayer::loadFile(string audioPath) {
   this->audioPath = audioPath;
   this->dataChannels = 2;
   

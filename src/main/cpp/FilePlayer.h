@@ -34,7 +34,7 @@ public:
     oboe::Result stop();
     oboe::Result close();
     
-    bool setFile(string audioPath);
+    bool loadFile(string audioPath);
     void play();
 
     ifstream file;
