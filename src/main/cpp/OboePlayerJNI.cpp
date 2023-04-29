@@ -33,10 +33,11 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
     
     Result result = sPlayer.open();
     if (result == Result::OK) {
-      bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/ez_snare_raw.wav");
+      // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/ez_snare_raw.wav");
       // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/SnareDrum_raw.wav");
       // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/HiHat_Closed_raw.wav");
       // bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/sine_440_hz_raw.wav");
+      bool fileResult = sPlayer.setFile("/storage/emulated/0/_temp/stereo_sine_raw.wav");
       
       if (!fileResult) return fileResult;
       result = sPlayer.start();

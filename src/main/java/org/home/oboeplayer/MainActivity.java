@@ -43,10 +43,8 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioPlayer = new AudioPlayer();
     
-    String audioPath = "";
-    audioPlayer.setFile(audioPath);
-    
-    audioPlayer.setPlaybackEnabled(true);
+    String audioPath = "/storage/emulated/0/_temp/stereo_sine_raw.wav";
+    audioPlayer.setupAudio(audioPath);
   }
   
   private void configUI() {

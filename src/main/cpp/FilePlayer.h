@@ -12,6 +12,22 @@ using namespace oboe;
 
 class FilePlayer {
 public:
+    
+    string audioPath;
+    bool isPlaying;
+    int dataChannels;
+    
+    uint16_t* fileBuffer;
+    int samplesProcessed;
+    int totalSamples;
+    int nextSampleId;
+  
+    FilePlayer() {
+      fileBuffer = NULL;
+      isPlaying = false;
+      dataChannels = 0;
+      samplesProcessed = 0;
+    }
 
     oboe::Result open();
     oboe::Result start();
@@ -58,10 +74,6 @@ private:
     shared_ptr<MyDataCallback> mDataCallback;
     shared_ptr<MyErrorCallback> mErrorCallback;
     
-    string audioPath;
-    bool isPlaying;
-    int dataChannels;
-
     static constexpr int kChannelCount = 2;
 };
 

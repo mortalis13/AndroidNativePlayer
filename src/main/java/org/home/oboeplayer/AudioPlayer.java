@@ -7,11 +7,8 @@ public class AudioPlayer {
   }
   
   
-  private String audioPath;
-
-  
-  public void setFile(String file) {
-    this.audioPath = file;
+  public void setupAudio(String audioPath) {
+    startAudioStreamNative(audioPath);
   }
   
   public void play() {
@@ -20,7 +17,7 @@ public class AudioPlayer {
   
   public void setPlaybackEnabled(boolean isEnabled) {
     if (isEnabled) {
-      startAudioStreamNative(this.audioPath);
+      // startAudioStreamNative(this.audioPath);
     }
     else {
       stopAudioStreamNative();

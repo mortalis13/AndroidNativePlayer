@@ -39,19 +39,18 @@ oboe::Result FilePlayer::stop() {
 }
 
 oboe::Result FilePlayer::close() {
-  file.close();
   return mStream->close();
 }
 
 void FilePlayer::play() {
-  if (file.tellg() == -1) file.clear();
-  file.seekg(0);
-  isPlaying = true;
+  this->isPlaying = true;
+  this->samplesProcessed = 0;
+  this->nextSampleId = 0;
 }
 
 bool FilePlayer::setFile(string audioPath) {
   this->audioPath = audioPath;
-  this->dataChannels = 1;
+  this->dataChannels = 2;
   
   file.open(this->audioPath, ios::binary | ios::ate);
   
@@ -61,40 +60,41 @@ bool FilePlayer::setFile(string audioPath) {
   }
   
   int size = file.tellg();
+  this->totalSamples = size / sizeof(uint16_t);
   __android_log_print(ANDROID_LOG_INFO, TAG, "Size: %d", size);
   file.seekg(0);
+  
+  if (fileBuffer != NULL) {
+    delete fileBuffer;
+  }
+  fileBuffer = new uint16_t[size];
+  
+  file.read((char*) fileBuffer, size);
+  file.close();
   
   return true;
 }
 
 
-/**
- * This callback method will be called from a high priority audio thread.
- * It should only do math and not do any blocking operations like
- * reading or writing files, memory allocation, or networking.
- * 
- * @param audioStream
- * @param audioData pointer to an array of samples to be filled
- * @param numFrames number of frames needed
- * @return
- */
 DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
+  // memset(audioData, 0, numFrames * kChannelCount * sizeof(uint16_t));
+
   if (!mParent->isPlaying) {
     return DataCallbackResult::Continue;
   }
   
   uint16_t* stream = (uint16_t*) audioData;
-
+  
   for (int i = 0; i < numFrames; i++) {
     uint16_t sample = 0;
     
     for (int ch = 0; ch < mParent->dataChannels; ch++) {
-      if (!mParent->file.read((char*) &sample, 2)) {
-        mParent->isPlaying = false;
-        return DataCallbackResult::Continue;
+      if (mParent->nextSampleId < mParent->totalSamples) {
+        sample = mParent->fileBuffer[mParent->nextSampleId++];
       }
       
       *stream++ = sample;
+      mParent->samplesProcessed++;
     }
     
     if (mParent->dataChannels == 1) {
@@ -102,30 +102,29 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
     }
   }
   
+  if (mParent->nextSampleId >= mParent->totalSamples) {
+    // mParent->nextSampleId = 0;
+    mParent->isPlaying = false;
+    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", mParent->samplesProcessed, mParent->nextSampleId);
+  }
+  
   
   // for (int i = 0; i < numFrames; i++) {
-  //   mParent->file.read((char*) stream, 2);
-  //   stream[1] = stream[0];
-  //   stream += 2;
-  // }
-  
-  
-  // char* stream = (char*) audioData;
-  // int size = numFrames * 2 * mParent->dataChannels;
-  
-  // int x = 0;
-  // for (int i = 0; i < size; i+=2) {
-  //   char buf1;
-  //   char buf2;
+  //   uint16_t sample = 0;
     
-  //   if (!mParent->file.read(&buf1, 1)) break;
-  //   if (!mParent->file.read(&buf2, 1)) break;
+  //   for (int ch = 0; ch < mParent->dataChannels; ch++) {
+  //     if (!mParent->file.read((char*) &sample, 2)) {
+  //       mParent->isPlaying = false;
+  //       return DataCallbackResult::Continue;
+  //     }
+      
+  //     __android_log_print(ANDROID_LOG_INFO, TAG, "Writing frame %d, sample: 0x%04x", i, sample);
+  //     *stream++ = sample;
+  //   }
     
-  //   stream[x++] = buf1;
-  //   stream[x++] = buf2;
-
-  //   stream[x++] = buf1;
-  //   stream[x++] = buf2;
+  //   if (mParent->dataChannels == 1) {
+  //     *stream++ = sample;
+  //   }
   // }
   
   return DataCallbackResult::Continue;
