@@ -15,13 +15,8 @@ public class AudioPlayer {
     playAudio();
   }
   
-  public void setPlaybackEnabled(boolean isEnabled) {
-    if (isEnabled) {
-      // startAudioStreamNative(this.audioPath);
-    }
-    else {
-      stopAudioStreamNative();
-    }
+  public void stop() {
+    stopAudioStreamNative();
   }
   
   private native int startAudioStreamNative(String audioPath);

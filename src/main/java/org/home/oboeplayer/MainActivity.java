@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
   private AudioPlayer audioPlayer;
   
   private boolean isPlaying;
+  private String audioPath;
 
   
   @Override
@@ -38,18 +39,24 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    if (audioPlayer != null) audioPlayer.setupAudio(audioPath);
+  }
+  
+  @Override
+  protected void onPause() {
+    super.onPause();
+    if (audioPlayer != null) audioPlayer.stop();
   }
   
   private void init() {
     audioPlayer = new AudioPlayer();
     
-    // String audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
-    // String audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
-    // String audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
-    String audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
-    // String audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
-    
-    audioPlayer.setupAudio(audioPath);
+    // audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
+    // audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
+    // audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
+    // audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
+    // audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
+    audioPath = "/storage/emulated/0/_temp/guitarA.wav";
   }
   
   private void configUI() {

@@ -11,6 +11,8 @@
 
 #include <resampler/MultiChannelResampler.h>
 
+#include "logging.h"
+
 using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
@@ -58,6 +60,8 @@ void FilePlayer::play() {
 }
 
 bool FilePlayer::loadFile(string audioPath) {
+  LOGI("Performance mode: %s", oboe::convertToText(mStream->getPerformanceMode()));
+  
   file.open(audioPath, ios::binary | ios::ate);
   
   if (!file.good()) {
@@ -155,10 +159,13 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
     float sample = 0;
     
     for (int ch = 0; ch < mParent->mNumChannels; ch++) {
+      sample = 0;
+      
       if (mParent->nextSampleId < mParent->totalSamples) {
         sample = mParent->mSampleData[mParent->nextSampleId++];
         mParent->samplesProcessed++;
       }
+      
       *stream++ = sample;
     }
     

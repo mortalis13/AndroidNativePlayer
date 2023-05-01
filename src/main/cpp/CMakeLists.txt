@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 project(oboe-player LANGUAGES CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-
 find_package(oboe REQUIRED CONFIG)
 
 set (
@@ -30,10 +28,9 @@ set (
   resampler/SincResamplerStereo.cpp
 )
 
-include_directories(
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${CMAKE_CURRENT_LIST_DIR}/wav_parser
-)
+message(CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR})
+
+include_directories(. wav_parser)
 
 add_library(oboeplayer SHARED ${APP_SOURCES})
 
