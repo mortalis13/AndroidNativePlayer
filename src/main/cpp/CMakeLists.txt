@@ -30,7 +30,7 @@ set (
 
 message(CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR})
 
-include_directories(. wav_parser)
+include_directories(. wav_parser filters)
 
 add_library(oboeplayer SHARED ${APP_SOURCES})
 

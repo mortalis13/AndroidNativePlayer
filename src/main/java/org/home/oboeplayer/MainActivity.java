@@ -51,12 +51,14 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioPlayer = new AudioPlayer();
     
-    // audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
-    // audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
-    // audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
-    // audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
-    // audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
+    audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
+    audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
+    audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
+    audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
+    audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
     audioPath = "/storage/emulated/0/_temp/guitarA.wav";
+    audioPath = "/storage/emulated/0/_temp/guitarB.wav";
+    audioPath = "/storage/emulated/0/_temp/srn.wav";
   }
   
   private void configUI() {

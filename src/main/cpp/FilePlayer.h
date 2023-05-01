@@ -6,6 +6,9 @@
 
 #include "oboe/Oboe.h"
 
+#include "filter_common.h"
+#include "filter_includes.h"
+
 using namespace std;
 using namespace oboe;
 
@@ -24,12 +27,16 @@ public:
   int32_t mNumChannels;
   int32_t mSampleRate;
   int32_t mNumSamples;
+  
+  std::unique_ptr<SO_LPF> mFilter;
 
   FilePlayer() {
     mSampleData = NULL;
     isPlaying = false;
     dataChannels = 0;
     samplesProcessed = 0;
+    
+    mFilter = std::unique_ptr<SO_LPF>(new SO_LPF());
   }
 
   oboe::Result open();
@@ -75,7 +82,7 @@ private:
 };
 
 
-  static constexpr int kChannelCount = 2;
+  static constexpr int kChannelCount = 1;
   
   shared_ptr<AudioStream> mStream;
   

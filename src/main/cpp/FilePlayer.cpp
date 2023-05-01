@@ -13,6 +13,7 @@
 
 #include "logging.h"
 
+
 using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
@@ -61,6 +62,8 @@ void FilePlayer::play() {
 
 bool FilePlayer::loadFile(string audioPath) {
   LOGI("Performance mode: %s", oboe::convertToText(mStream->getPerformanceMode()));
+  
+  mFilter->calculate_coeffs(0.5, 1000, mStream->getSampleRate());
   
   file.open(audioPath, ios::binary | ios::ate);
   
@@ -153,30 +156,36 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
     return DataCallbackResult::Continue;
   }
   
+  auto data = mParent->mSampleData;
+  
   float* stream = (float*) audioData;
+  float delayed = 0;
+  
+  int delayAmount = (int) (mParent->mSampleRate * 0.2);
   
   for (int i = 0; i < numFrames; i++) {
     float sample = 0;
     
-    for (int ch = 0; ch < mParent->mNumChannels; ch++) {
-      sample = 0;
-      
-      if (mParent->nextSampleId < mParent->totalSamples) {
-        sample = mParent->mSampleData[mParent->nextSampleId++];
-        mParent->samplesProcessed++;
-      }
-      
-      *stream++ = sample;
+    // -- Delay
+    // if (mParent->nextSampleId < mParent->totalSamples) {
+    //   float delay = (mParent->nextSampleId >= delayAmount) ? data[mParent->nextSampleId - delayAmount] : 0;
+    //   sample = data[mParent->nextSampleId] + 0.5 * delay;
+    //   mParent->nextSampleId++;
+    // }
+    
+    // -- Low-pass filter
+    if (mParent->nextSampleId < mParent->totalSamples) {
+      sample = data[mParent->nextSampleId];
+      if (mParent->nextSampleId < mParent->totalSamples / 2)
+        sample = mParent->mFilter->process(sample);
+      mParent->nextSampleId++;
     }
     
-    if (mParent->mNumChannels == 1) {
-      *stream++ = sample;
-    }
+    *stream++ = sample;
   }
   
   if (mParent->nextSampleId >= mParent->totalSamples) {
     mParent->isPlaying = false;
-    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", mParent->samplesProcessed, mParent->nextSampleId);
   }
   
   return DataCallbackResult::Continue;
