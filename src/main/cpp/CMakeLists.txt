@@ -6,6 +6,7 @@ find_package(oboe REQUIRED CONFIG)
 set (
   APP_SOURCES
   
+  AudioDecoder.cpp
   FilePlayer.cpp
   OboePlayerJNI.cpp
   

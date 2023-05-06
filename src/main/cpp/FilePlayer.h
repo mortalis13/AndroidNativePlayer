@@ -16,7 +16,8 @@ public:
   bool isPlaying;
   int dataChannels;
   
-  float* mSampleData;
+  unique_ptr<float[]> mSampleData;
+  
   int samplesProcessed;
   int totalSamples;
   int nextSampleId;
@@ -26,7 +27,7 @@ public:
   int32_t mNumSamples;
 
   FilePlayer() {
-    mSampleData = NULL;
+    mSampleData = nullptr;
     isPlaying = false;
     dataChannels = 0;
     samplesProcessed = 0;
@@ -38,6 +39,7 @@ public:
   oboe::Result close();
   
   bool loadFile(string audioPath);
+  bool loadFileWav(string audioPath);
   void play();
 
   ifstream file;

@@ -13,11 +13,14 @@
 
 #include "logging.h"
 
+#include "AudioDecoder.h"
+
 using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
 
 static const char *TAG = "FilePlayer";
+constexpr int kMaxCompressionRatio { 12 };
 
 
 oboe::Result FilePlayer::open() {
@@ -31,13 +34,17 @@ oboe::Result FilePlayer::open() {
   builder.setSharingMode(SharingMode::Exclusive);
   builder.setPerformanceMode(PerformanceMode::LowLatency);
   builder.setFormat(AudioFormat::Float);
+  builder.setFormatConversionAllowed(true);
   builder.setChannelCount(kChannelCount);
   builder.setDataCallback(mDataCallback);
   builder.setErrorCallback(mErrorCallback);
-  builder.setSampleRate(44100);
+  builder.setSampleRate(48000);
   builder.setSampleRateConversionQuality(SampleRateConversionQuality::Medium);
 
   oboe::Result result = builder.openStream(mStream);
+  if (result != Result::OK) {
+    LOGE("Failed to open stream. Error: %s", convertToText(result));
+  }
   return result;
 }
 
@@ -60,6 +67,38 @@ void FilePlayer::play() {
 }
 
 bool FilePlayer::loadFile(string audioPath) {
+  file.open(audioPath, ios::binary | ios::ate);
+  int fileSize = file.tellg();
+  file.close();
+  
+  const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
+  auto decodedData = new uint8_t[maximumDataSizeInBytes];
+  
+  AudioDecoder decoder;
+  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+  if (bytesDecoded == -1) {
+    return false;
+  }
+  auto numSamples = bytesDecoded / sizeof(float);
+  
+  auto outputBuffer = make_unique<float[]>(numSamples);
+  memcpy(outputBuffer.get(), decodedData, (size_t) bytesDecoded);
+  
+  this->mSampleData = std::move(outputBuffer);
+  this->totalSamples = numSamples;
+  this->mNumChannels = decoder.channels;
+  
+  LOGI("bytesDecoded: %d", bytesDecoded);
+  LOGI("numSamples: %d", numSamples);
+  LOGI("player.totalSamples: %d", this->totalSamples);
+  LOGI("player.mNumChannels: %d", this->mNumChannels);
+  
+  delete[] decodedData;
+  return true;
+}
+
+
+bool FilePlayer::loadFileWav(string audioPath) {
   LOGI("Performance mode: %s", oboe::convertToText(mStream->getPerformanceMode()));
   
   file.open(audioPath, ios::binary | ios::ate);
@@ -91,12 +130,8 @@ bool FilePlayer::loadFile(string audioPath) {
   mSampleRate = reader.getSampleRate();
   mNumSamples = reader.getNumSampleFrames() * reader.getNumChannels();
   
-  if (mSampleData != NULL) {
-    delete[] mSampleData;
-  }
-  mSampleData = new float[mNumSamples];
-  
-  reader.getDataFloat(mSampleData, reader.getNumSampleFrames());
+  mSampleData = make_unique<float[]>(mNumSamples);
+  reader.getDataFloat(mSampleData.get(), reader.getNumSampleFrames());
   
   this->resampleData(mStream->getSampleRate());
   
@@ -118,7 +153,7 @@ void FilePlayer::resampleData(int destSampleRate) {
 
   MultiChannelResampler *resampler = MultiChannelResampler::make(mNumChannels, mSampleRate, destSampleRate, MultiChannelResampler::Quality::Medium);
   
-  float* inputBuffer = mSampleData;
+  float* inputBuffer = mSampleData.get();
   float* outputBuffer = new float[numOutFramesAllocated];
   float* resampledData = outputBuffer;
 
@@ -139,9 +174,8 @@ void FilePlayer::resampleData(int destSampleRate) {
   }
   
   delete resampler;
-  delete[] mSampleData;
 
-  mSampleData = resampledData;
+  mSampleData.reset(resampledData);
   mNumSamples = numOutputSamples;
   mSampleRate = destSampleRate;
 }
@@ -154,6 +188,7 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
   }
   
   float* stream = (float*) audioData;
+  float* data = mParent->mSampleData.get();
   
   for (int i = 0; i < numFrames; i++) {
     float sample = 0;
@@ -162,7 +197,7 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
       sample = 0;
       
       if (mParent->nextSampleId < mParent->totalSamples) {
-        sample = mParent->mSampleData[mParent->nextSampleId++];
+        sample = data[mParent->nextSampleId++];
         mParent->samplesProcessed++;
       }
       

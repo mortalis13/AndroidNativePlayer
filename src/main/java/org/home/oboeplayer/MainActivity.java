@@ -56,7 +56,10 @@ public class MainActivity extends AppCompatActivity {
     // audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
     // audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
     // audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
-    audioPath = "/storage/emulated/0/_temp/guitarA.wav";
+    // audioPath = "/storage/emulated/0/_temp/guitarA.wav";
+    
+    audioPath = "/storage/emulated/0/_temp/CLAP.mp3";
+    // audioPath = "/storage/emulated/0/_temp/FUNKY_HOUSE.mp3";
   }
   
   private void configUI() {

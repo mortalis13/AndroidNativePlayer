@@ -41,6 +41,7 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
       env->ReleaseStringUTFChars(jaudioPath, audioPathBytes);
       
       bool fileResult = sPlayer.loadFile(audioPath);
+      // bool fileResult = sPlayer.loadFileWav(audioPath);
       
       if (!fileResult) return fileResult;
       result = sPlayer.start();
