@@ -14,9 +14,13 @@ void AudioDecoder::start() {
   LOGI("start(), Thread ID: %d", std::this_thread::get_id());
   
   this->enabled = true;
-  auto runResult = std::async(&AudioDecoder::run, this);
+  
   // this->run();
-  LOGI("Decoder stated");
+
+  auto runThread = std::async(&AudioDecoder::run, this);
+  LOGI("Decoder thread stated");
+  runThread.wait();
+  LOGI("Decoder thread ended");
 }
 
 
@@ -79,21 +83,6 @@ void AudioDecoder::run() {
         int64_t bytesToWrite = frame_count * sizeof(float) * this->channelCount;
         int samplesWritten = 0;
         
-        // ---------
-        // dumpfile.write((char*) buffer, bytesToWrite);
-        // for (int i = 0; i < bytesToWrite; i++) {
-        //   dumpfile.write((char*) buffer+i, 1);
-        // }
-        // for (int i = 0; i < bytesToWrite; i+=sizeof(float)) {
-        //   dumpfile.write((char*) buffer+i, sizeof(float));
-        // }
-        // for (int i = 0; i < bytesToWrite; i+=sizeof(float)) {
-        //   float sample;
-        //   memcpy(&sample, (uint8_t*) buffer+i, sizeof(float));
-        //   dumpfile.write((char*) &sample, sizeof(float));
-        // }
-        // ---------
-        
         int pushedBytes = 0;
         
         while (pushedBytes < bytesToWrite) {
@@ -119,10 +108,6 @@ void AudioDecoder::run() {
         av_packet_unref(&avPacket);
       }
     }
-    
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    // std::this_thread::sleep_for(100ns);
-    // usleep(10000);
   }
   
   end:
