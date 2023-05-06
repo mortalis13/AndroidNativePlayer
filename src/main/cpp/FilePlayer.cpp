@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
+#include <future>
 
 #include <android/log.h>
 
@@ -72,33 +73,8 @@ void FilePlayer::play() {
   this->nextSampleId = 0;
   
   this->decoder->start();
+  LOGI("Decoder started");
 }
-
-// bool FilePlayer::loadFile(string audioPath) {
-//   file.open(audioPath, ios::binary | ios::ate);
-//   int fileSize = file.tellg();
-//   file.close();
-  
-//   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
-//   auto decodedData = new uint8_t[maximumDataSizeInBytes];
-  
-//   AudioDecoder decoder;
-//   int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
-//   if (bytesDecoded == -1) {
-//     return false;
-//   }
-//   auto numSamples = bytesDecoded / sizeof(float);
-  
-//   for (int i=0; i<numSamples; i++) {
-//     float sample;
-//     memcpy(&sample, decodedData+i*sizeof(float), sizeof(float));
-//     dataQ.push(sample);
-//   }
-  
-//   this->mNumChannels = decoder.in_channels;
-
-//   return true;
-// }
 
 
 bool FilePlayer::loadFile(string audioPath) {
@@ -142,9 +118,6 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
     // memcpy(&sample, decodedData+i*sizeof(float), sizeof(float));
     sample = outputBuffer.get()[i];
     dataQ.push(sample);
-  }
-  
-  for (int i=0; i<numSamples; i++) {
   }
   
   this->mNumChannels = decoder.in_channels;

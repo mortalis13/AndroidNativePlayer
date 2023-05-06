@@ -9,6 +9,8 @@ extern "C" {
 
 #include <string>
 #include <cstdint>
+#include <thread>
+#include <future>
 
 #include "defs.h"
 
@@ -59,6 +61,9 @@ private:
   SwrContext *swr;
   
   SharedQueue* dataQ;
+  
+  // thread runThread;
+  future<void> runThread;
   
 };
 

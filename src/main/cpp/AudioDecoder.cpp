@@ -1,9 +1,6 @@
 #include "AudioDecoder.h"
 
 #include <memory>
-#include <future>
-#include <chrono>
-#include <unistd.h>
 
 #include <fstream>
 
@@ -16,22 +13,21 @@ void AudioDecoder::start() {
   this->enabled = true;
   
   // this->run();
-
-  auto runThread = std::async(&AudioDecoder::run, this);
+  
+  runThread = std::async(&AudioDecoder::run, this);
+  // runThread = thread(&AudioDecoder::run, this);
   LOGI("Decoder thread stated");
-  runThread.wait();
-  LOGI("Decoder thread ended");
 }
 
 
 void AudioDecoder::run() {
   LOGI("run(), Thread ID: %d", std::this_thread::get_id());
-  ofstream dumpfile;
-  string dumppath = "/storage/emulated/0/_temp/dump_f.wav";
-  dumpfile.open(dumppath, ios::binary);
-  if (!dumpfile.good()) {
-    LOGE("Could not open dump file for writing");
-  }
+  // ofstream dumpfile;
+  // string dumppath = "/storage/emulated/0/_temp/dump_f.wav";
+  // dumpfile.open(dumppath, ios::binary);
+  // if (!dumpfile.good()) {
+  //   LOGE("Could not open dump file for writing");
+  // }
   
   // Prepare to read data
   int result;
@@ -117,7 +113,7 @@ void AudioDecoder::run() {
   av_frame_free(&decodedFrame);
   this->cleanup();
   
-  dumpfile.close();
+  // dumpfile.close();
 }
 
 
