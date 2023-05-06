@@ -71,6 +71,8 @@ void FilePlayer::play() {
 
 
 bool FilePlayer::loadFile(string audioPath) {
+  // return loadFileStatic(audioPath);
+  
   this->decoder = new AudioDecoder(&dataQ);
   this->decoder->setChannelCount(mStream->getChannelCount());
   this->decoder->setSampleRate(mStream->getSampleRate());
@@ -85,10 +87,99 @@ bool FilePlayer::loadFile(string audioPath) {
 }
 
 
+void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
+  for (int i = 0; i < numFrames * kChannelCount; i++) {
+    float sample = 0;
+    
+    bool popped = this->dataQ.pop(sample);
+    if (!popped) {
+      sample = 0;
+    }
+    
+    *stream++ = sample;
+  }
+}
+
+
+DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
+  if (!mParent->isPlaying) {
+    memset(audioData, 0, numFrames * kChannelCount * sizeof(float));
+    return DataCallbackResult::Continue;
+  }
+  
+  float* stream = (float*) audioData;
+  mParent->writeAudio(stream, numFrames);
+  // mParent->writeAudioStatic(stream, numFrames);
+  
+  return DataCallbackResult::Continue;
+}
+
+
+void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
+  __android_log_print(ANDROID_LOG_ERROR, TAG, "%s() - error = %s", __func__, oboe::convertToText(error));
+  if (mParent->open() == Result::OK) {
+    mParent->start();
+  }
+}
+
+
+// -------------
+
+bool FilePlayer::loadFileStatic(string audioPath) {
+  inputFile.open(audioPath, ios::binary | ios::ate);
+  int fileSize = inputFile.tellg();
+  inputFile.close();
+  
+  const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
+  auto decodedData = new uint8_t[maximumDataSizeInBytes];
+  
+  AudioDecoder decoder;
+  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+  if (bytesDecoded == -1) {
+    return false;
+  }
+  auto numSamples = bytesDecoded / sizeof(float);
+  
+  auto outputBuffer = make_unique<float[]>(numSamples);
+  memcpy(outputBuffer.get(), decodedData, (size_t) bytesDecoded);
+  
+  this->mSampleData = std::move(outputBuffer);
+  this->totalSamples = numSamples;
+  this->mNumChannels = decoder.in_channels;
+  
+  LOGI("bytesDecoded: %d", bytesDecoded);
+  LOGI("numSamples: %d", numSamples);
+  LOGI("player.mNumChannels: %d", this->mNumChannels);
+  
+  delete[] decodedData;
+  return true;
+}
+
+void FilePlayer::writeAudioStatic(float* stream, int32_t numFrames) {
+  float* data = this->mSampleData.get();
+  
+  for (int i = 0; i < numFrames * kChannelCount; i++) {
+    float sample = 0;
+    
+    if (this->nextSampleId < this->totalSamples) {
+      sample = data[this->nextSampleId++];
+      this->samplesProcessed++;
+    }
+    
+    *stream++ = sample;
+  }
+  
+  if (this->nextSampleId >= this->totalSamples) {
+    this->isPlaying = false;
+    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
+  }
+}
+
+
 bool FilePlayer::loadFileQueueStatic(string audioPath) {
-  file.open(audioPath, ios::binary | ios::ate);
-  int fileSize = file.tellg();
-  file.close();
+  inputFile.open(audioPath, ios::binary | ios::ate);
+  int fileSize = inputFile.tellg();
+  inputFile.close();
   
   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
   auto decodedData = new uint8_t[maximumDataSizeInBytes];
@@ -116,56 +207,25 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
 }
 
 
-bool FilePlayer::loadFileFull(string audioPath) {
-  file.open(audioPath, ios::binary | ios::ate);
-  int fileSize = file.tellg();
-  file.close();
-  
-  const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
-  auto decodedData = new uint8_t[maximumDataSizeInBytes];
-  
-  AudioDecoder decoder;
-  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
-  if (bytesDecoded == -1) {
-    return false;
-  }
-  auto numSamples = bytesDecoded / sizeof(float);
-  
-  auto outputBuffer = make_unique<float[]>(numSamples);
-  memcpy(outputBuffer.get(), decodedData, (size_t) bytesDecoded);
-  
-  this->mSampleData = std::move(outputBuffer);
-  this->totalSamples = numSamples;
-  this->mNumChannels = decoder.in_channels;
-  
-  LOGI("bytesDecoded: %d", bytesDecoded);
-  LOGI("numSamples: %d", numSamples);
-  LOGI("player.mNumChannels: %d", this->mNumChannels);
-  
-  delete[] decodedData;
-  return true;
-}
-
-
 bool FilePlayer::loadFileWav(string audioPath) {
   LOGI("Performance mode: %s", oboe::convertToText(mStream->getPerformanceMode()));
   
-  file.open(audioPath, ios::binary | ios::ate);
+  inputFile.open(audioPath, ios::binary | ios::ate);
   
-  if (!file.good()) {
+  if (!inputFile.good()) {
     __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open file: %s => %s", audioPath.c_str(), strerror(errno));
     return false;
   }
   
-  int size = file.tellg();
+  int size = inputFile.tellg();
   this->totalSamples = size / sizeof(uint16_t);
   __android_log_print(ANDROID_LOG_INFO, TAG, "Size: %d", size);
-  file.seekg(0);
+  inputFile.seekg(0);
   
   unsigned char* buf = new unsigned char[size];
   
-  file.read((char*) buf, size);
-  file.close();
+  inputFile.read((char*) buf, size);
+  inputFile.close();
   
   MemInputStream stream(buf, size);
   WavStreamReader reader(&stream);
@@ -188,7 +248,6 @@ bool FilePlayer::loadFileWav(string audioPath) {
   return true;
 }
 
-
 void FilePlayer::resampleData(int destSampleRate) {
   if (mSampleRate == destSampleRate) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "No need to resemple from %d to %d", mSampleRate, destSampleRate);
@@ -210,16 +269,16 @@ void FilePlayer::resampleData(int destSampleRate) {
   int inputSamplesLeft = mNumSamples;
   
   while (inputSamplesLeft > 0 && numOutputSamples < numOutFramesAllocated) {
-      if (resampler->isWriteNeeded()) {
-          resampler->writeNextFrame(inputBuffer);
-          inputBuffer += mNumChannels;
-          inputSamplesLeft -= mNumChannels;
-      }
-      else {
-          resampler->readNextFrame(outputBuffer);
-          outputBuffer += mNumChannels;
-          numOutputSamples += mNumChannels;
-      }
+    if (resampler->isWriteNeeded()) {
+      resampler->writeNextFrame(inputBuffer);
+      inputBuffer += mNumChannels;
+      inputSamplesLeft -= mNumChannels;
+    }
+    else {
+      resampler->readNextFrame(outputBuffer);
+      outputBuffer += mNumChannels;
+      numOutputSamples += mNumChannels;
+    }
   }
   
   delete resampler;
@@ -229,33 +288,30 @@ void FilePlayer::resampleData(int destSampleRate) {
   mSampleRate = destSampleRate;
 }
 
-
-DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
-  if (!mParent->isPlaying) {
-    memset(audioData, 0, numFrames * kChannelCount * sizeof(float));
-    return DataCallbackResult::Continue;
-  }
+void FilePlayer::writeAudioWav(float* stream, int32_t numFrames) {
+  float* data = this->mSampleData.get();
   
-  float* stream = (float*) audioData;
-  
-  for (int i = 0; i < numFrames * kChannelCount; i++) {
+  for (int i = 0; i < numFrames; i++) {
     float sample = 0;
     
-    bool popped = mParent->dataQ.pop(sample);
-    if (!popped) {
+    for (int ch = 0; ch < this->mNumChannels; ch++) {
       sample = 0;
+      
+      if (this->nextSampleId < this->totalSamples) {
+        sample = data[this->nextSampleId++];
+        this->samplesProcessed++;
+      }
+      
+      *stream++ = sample;
     }
     
-    *stream++ = sample;
+    if (this->mNumChannels == 1) {
+      *stream++ = sample;
+    }
   }
   
-  return DataCallbackResult::Continue;
-}
-
-
-void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
-  __android_log_print(ANDROID_LOG_ERROR, TAG, "%s() - error = %s", __func__, oboe::convertToText(error));
-  if (mParent->open() == Result::OK) {
-    mParent->start();
+  if (this->nextSampleId >= this->totalSamples) {
+    this->isPlaying = false;
+    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
   }
 }

@@ -12,9 +12,9 @@
   <Button
     android:id="@+id/btn"
     android:layout_width="match_parent"
-    android:layout_height="80dp"
+    android:layout_height="120dp"
     android:gravity="center"
-    android:textSize="20dp"
+    android:textSize="26dp"
     android:text="Test"
   />
 

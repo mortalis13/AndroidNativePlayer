@@ -48,8 +48,6 @@ public:
 
 
 private:
-  static AVStream* getBestAudioStream(AVFormatContext* avFormatContext);
-
   static void printCodecParameters(AVCodecParameters* params);
   
   void cleanup();

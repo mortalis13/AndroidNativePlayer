@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioPlayer = new AudioPlayer();
     
-    // audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
+    audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
     // audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
     // audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
     // audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
@@ -88,17 +88,12 @@ public class MainActivity extends AppCompatActivity {
     
     // audioPath = "/storage/emulated/0/_temp/CLAP.mp3";
     // audioPath = "/storage/emulated/0/_temp/FUNKY_HOUSE.mp3";
-    audioPath = "/storage/emulated/0/_temp/01. Italian Serenade.mp3";
+    // audioPath = "/storage/emulated/0/_temp/clap-mono.mp3";
+    // audioPath = "/storage/emulated/0/_temp/01. Italian Serenade.mp3";
   }
   
   private void configUI() {
-    // TextView activeTitle = findViewById(R.id.activeTitle);
-    // activeTitle.setOnTouchListener((view, event) -> {
-    //   if (event.getAction() == MotionEvent.ACTION_DOWN) {
-    //     audioPlayer.play();
-    //   }
-    //   return true;
-    // });
+    
   }
   
   public boolean onTouchEvent(MotionEvent event) {
