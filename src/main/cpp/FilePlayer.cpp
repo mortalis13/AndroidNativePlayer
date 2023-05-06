@@ -90,7 +90,6 @@ bool FilePlayer::loadFile(string audioPath) {
   
   LOGI("bytesDecoded: %d", bytesDecoded);
   LOGI("numSamples: %d", numSamples);
-  LOGI("player.totalSamples: %d", this->totalSamples);
   LOGI("player.mNumChannels: %d", this->mNumChannels);
   
   delete[] decodedData;

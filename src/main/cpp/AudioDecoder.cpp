@@ -9,72 +9,72 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   LOGI("Decoder: FFMpeg");
   int result = -1;
 
-  AVFormatContext *formatContext0 = avformat_alloc_context();
-  unique_ptr<AVFormatContext, decltype(&avformat_free_context)> formatContext {
-      formatContext0,
-      &avformat_free_context
-  };
+  AVFormatContext *formatContext = NULL;
+  AVStream *stream;
+  AVCodec *codec;
+  AVCodecContext *codecContext = NULL;
+  SwrContext *swr;
   
-  result = avformat_open_input(&formatContext0, filePath.c_str(), NULL, NULL);
+  int bytesWritten;
+  AVPacket avPacket; // Stores compressed audio data
+  AVFrame *decodedFrame;
+  int bytesPerSample;
+  int32_t outChannelLayout;
+
+  // -- Init decoder
+  
+  result = avformat_open_input(&formatContext, filePath.c_str(), NULL, NULL);
   if (result != 0) {
     LOGE("Failed to open file. Error code %s", av_err2str(result));
-    return result;
+    goto cleanup;
   }
   
-  result = avformat_find_stream_info(formatContext.get(), NULL);
+  result = avformat_find_stream_info(formatContext, NULL);
   if (result != 0) {
     LOGE("Failed to find stream info. Error code %s", av_err2str(result));
-    return result;
+    goto cleanup;
   }
   
   // Obtain the best audio stream to decode
-  AVStream *stream = getBestAudioStream(formatContext.get());
+  stream = getBestAudioStream(formatContext);
   if (stream == nullptr || stream->codecpar == nullptr){
       LOGE("Could not find a suitable audio stream to decode");
-      return -1;
+      goto cleanup;
   }
 
   printCodecParameters(stream->codecpar);
   this->channels = stream->codecpar->channels;
 
   // Find the codec to decode this stream
-  AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+  codec = avcodec_find_decoder(stream->codecpar->codec_id);
   if (!codec){
       LOGE("Could not find codec with ID: %d", stream->codecpar->codec_id);
-      return -1;
+      goto cleanup;
   }
-
-  // Create the codec context, specifying the deleter function
-  unique_ptr<AVCodecContext, void(*)(AVCodecContext *)> codecContext {
-      nullptr,
-      [](AVCodecContext *c) { avcodec_free_context(&c); }
-  };
-  {
-      AVCodecContext *tmp = avcodec_alloc_context3(codec);
-      if (!tmp){
-          LOGE("Failed to allocate codec context");
-          return -1;
-      }
-      codecContext.reset(tmp);
+  
+  codecContext = avcodec_alloc_context3(codec);
+  if (!codecContext){
+      LOGE("Failed to allocate codec context");
+      goto cleanup;
   }
 
   // Copy the codec parameters into the context
-  if (avcodec_parameters_to_context(codecContext.get(), stream->codecpar) < 0){
+  if (avcodec_parameters_to_context(codecContext, stream->codecpar) < 0){
       LOGE("Failed to copy codec parameters to codec context");
-      return -1;
+      goto cleanup;
   }
 
   // Open the codec
-  if (avcodec_open2(codecContext.get(), codec, nullptr) < 0){
+  if (avcodec_open2(codecContext, codec, nullptr) < 0){
       LOGE("Could not open codec");
-      return -1;
+      goto cleanup;
   }
 
   // prepare resampler
-  int32_t outChannelLayout = (1 << channelCount) - 1;
+  outChannelLayout = (1 << channelCount) - 1;
   LOGD("Channel layout %d", outChannelLayout);
 
-  SwrContext *swr = swr_alloc();
+  swr = swr_alloc();
   av_opt_set_int(swr, "in_channel_count", stream->codecpar->channels, 0);
   av_opt_set_int(swr, "out_channel_count", channelCount, 0);
   av_opt_set_int(swr, "in_channel_layout", stream->codecpar->channel_layout, 0);
@@ -89,37 +89,36 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   result = swr_init(swr);
   if (result != 0){
       LOGE("swr_init failed. Error: %s", av_err2str(result));
-      return result;
+      goto cleanup;
   };
   
   if (!swr_is_initialized(swr)) {
       LOGE("swr_is_initialized is false\n");
-      return -1;
+      goto cleanup;
   }
 
   // Prepare to read data
-  int bytesWritten = 0;
-  AVPacket avPacket; // Stores compressed audio data
+  bytesWritten = 0;
   av_init_packet(&avPacket);
-  AVFrame *decodedFrame = av_frame_alloc(); // Stores raw audio data
-  int bytesPerSample = av_get_bytes_per_sample((AVSampleFormat)stream->codecpar->format);
+  decodedFrame = av_frame_alloc(); // Stores raw audio data
+  bytesPerSample = av_get_bytes_per_sample((AVSampleFormat)stream->codecpar->format);
 
   LOGD("Bytes per sample %d", bytesPerSample);
 
   LOGD("DECODE START");
 
   // While there is more data to read, read it into the avPacket
-  while (av_read_frame(formatContext.get(), &avPacket) == 0){
+  while (av_read_frame(formatContext, &avPacket) == 0){
     if (avPacket.stream_index == stream->index && avPacket.size > 0) {
       // Pass our compressed data into the codec
-      result = avcodec_send_packet(codecContext.get(), &avPacket);
+      result = avcodec_send_packet(codecContext, &avPacket);
       if (result != 0) {
           LOGE("avcodec_send_packet error: %s", av_err2str(result));
           goto cleanup;
       }
 
       // Retrieve our raw data from the codec
-      result = avcodec_receive_frame(codecContext.get(), decodedFrame);
+      result = avcodec_receive_frame(codecContext, decodedFrame);
       if (result == AVERROR(EAGAIN)) {
           // The codec needs more data before it can decode
           LOGI("avcodec_receive_frame returned EAGAIN");
@@ -149,14 +148,16 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
       av_packet_unref(&avPacket);
     }
   }
-
-  av_frame_free(&decodedFrame);
-  
   LOGD("DECODE END");
 
   result = bytesWritten;
 
   cleanup:
+  av_frame_free(&decodedFrame);
+  avformat_close_input(&formatContext);
+  avcodec_free_context(&codecContext);
+  swr_free(&swr);
+  
   return result;
 }
 
@@ -175,10 +176,11 @@ AVStream* AudioDecoder::getBestAudioStream(AVFormatContext* avFormatContext) {
 
 
 void AudioDecoder::printCodecParameters(AVCodecParameters* params) {
-  LOGD("Stream properties");
+  LOGD("Stream properties:");
   LOGD("Channels: %d", params->channels);
   LOGD("Channel layout: %" PRId64, params->channel_layout);
   LOGD("Sample rate: %d", params->sample_rate);
-  LOGD("Format: %s", av_get_sample_fmt_name((AVSampleFormat)params->format));
+  LOGD("Format: %s", av_get_sample_fmt_name((AVSampleFormat) params->format));
   LOGD("Frame size: %d", params->frame_size);
+  LOGD("END Stream properties");
 }
