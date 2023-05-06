@@ -8,6 +8,7 @@
 
 #include <android/log.h>
 
+#include "logging.h"
 #include "FilePlayer.h"
 
 
@@ -43,7 +44,10 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
       bool fileResult = sPlayer.loadFile(audioPath);
       // bool fileResult = sPlayer.loadFileWav(audioPath);
       
-      if (!fileResult) return fileResult;
+      if (!fileResult) {
+        LOGE("Could not properly load audio file. Check the previous logs.");
+        return fileResult;
+      }
       result = sPlayer.start();
     }
     

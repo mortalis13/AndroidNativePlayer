@@ -6,6 +6,9 @@
 
 #include "oboe/Oboe.h"
 
+#include "AudioDecoder.h"
+#include "defs.h"
+
 using namespace std;
 using namespace oboe;
 
@@ -25,6 +28,10 @@ public:
   int32_t mNumChannels;
   int32_t mSampleRate;
   int32_t mNumSamples;
+  
+  AudioDecoder* decoder;
+  
+  SharedQueue dataQ;
 
   FilePlayer() {
     mSampleData = nullptr;
@@ -39,10 +46,16 @@ public:
   oboe::Result close();
   
   bool loadFile(string audioPath);
+  
+  bool loadFileQueueStatic(string audioPath);
+  bool loadFileFull(string audioPath);
   bool loadFileWav(string audioPath);
   void play();
 
   ifstream file;
+  
+  ofstream dumpfile;
+  string dumppath = "/storage/emulated/0/_temp/dump.wav";
 
 private:
 

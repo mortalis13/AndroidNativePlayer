@@ -13,8 +13,6 @@
 
 #include "logging.h"
 
-#include "AudioDecoder.h"
-
 using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
@@ -45,6 +43,12 @@ oboe::Result FilePlayer::open() {
   if (result != Result::OK) {
     LOGE("Failed to open stream. Error: %s", convertToText(result));
   }
+  
+  dumpfile.open(dumppath, ios::binary);
+  if (!dumpfile.good()) {
+    LOGE("Could not open dump file for writing");
+  }
+  
   return result;
 }
 
@@ -57,6 +61,8 @@ oboe::Result FilePlayer::stop() {
 }
 
 oboe::Result FilePlayer::close() {
+  LOGI("Player closed");
+  dumpfile.close();
   return mStream->close();
 }
 
@@ -64,9 +70,90 @@ void FilePlayer::play() {
   this->isPlaying = true;
   this->samplesProcessed = 0;
   this->nextSampleId = 0;
+  
+  this->decoder->start();
 }
 
+// bool FilePlayer::loadFile(string audioPath) {
+//   file.open(audioPath, ios::binary | ios::ate);
+//   int fileSize = file.tellg();
+//   file.close();
+  
+//   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
+//   auto decodedData = new uint8_t[maximumDataSizeInBytes];
+  
+//   AudioDecoder decoder;
+//   int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+//   if (bytesDecoded == -1) {
+//     return false;
+//   }
+//   auto numSamples = bytesDecoded / sizeof(float);
+  
+//   for (int i=0; i<numSamples; i++) {
+//     float sample;
+//     memcpy(&sample, decodedData+i*sizeof(float), sizeof(float));
+//     dataQ.push(sample);
+//   }
+  
+//   this->mNumChannels = decoder.in_channels;
+
+//   return true;
+// }
+
+
 bool FilePlayer::loadFile(string audioPath) {
+  this->decoder = new AudioDecoder(&dataQ);
+  this->decoder->setChannelCount(mStream->getChannelCount());
+  this->decoder->setSampleRate(mStream->getSampleRate());
+  int result = this->decoder->initForFile(audioPath);
+  
+  // this->decoder->enabled = true;
+  // this->decoder->run();
+  
+  if (result == -1) {
+    return false;
+  }
+  this->mNumChannels = this->decoder->in_channels;
+
+  return true;
+}
+
+
+bool FilePlayer::loadFileQueueStatic(string audioPath) {
+  file.open(audioPath, ios::binary | ios::ate);
+  int fileSize = file.tellg();
+  file.close();
+  
+  const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
+  auto decodedData = new uint8_t[maximumDataSizeInBytes];
+  
+  AudioDecoder decoder;
+  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+  if (bytesDecoded == -1) {
+    return false;
+  }
+  auto numSamples = bytesDecoded / sizeof(float);
+  
+  auto outputBuffer = make_unique<float[]>(numSamples);
+  memcpy(outputBuffer.get(), decodedData, (size_t) bytesDecoded);
+  
+  for (int i=0; i<numSamples; i++) {
+    float sample;
+    // memcpy(&sample, decodedData+i*sizeof(float), sizeof(float));
+    sample = outputBuffer.get()[i];
+    dataQ.push(sample);
+  }
+  
+  for (int i=0; i<numSamples; i++) {
+  }
+  
+  this->mNumChannels = decoder.in_channels;
+
+  return true;
+}
+
+
+bool FilePlayer::loadFileFull(string audioPath) {
   file.open(audioPath, ios::binary | ios::ate);
   int fileSize = file.tellg();
   file.close();
@@ -86,7 +173,7 @@ bool FilePlayer::loadFile(string audioPath) {
   
   this->mSampleData = std::move(outputBuffer);
   this->totalSamples = numSamples;
-  this->mNumChannels = decoder.channels;
+  this->mNumChannels = decoder.in_channels;
   
   LOGI("bytesDecoded: %d", bytesDecoded);
   LOGI("numSamples: %d", numSamples);
@@ -187,31 +274,27 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
   }
   
   float* stream = (float*) audioData;
-  float* data = mParent->mSampleData.get();
+  int samplesRead = 0;
   
-  for (int i = 0; i < numFrames; i++) {
+  for (int i = 0; i < numFrames * kChannelCount; i++) {
     float sample = 0;
     
-    for (int ch = 0; ch < mParent->mNumChannels; ch++) {
+    bool popped = mParent->dataQ.pop(sample);
+    if (!popped) {
+      // LOGE("EMPTY QUEUE");
       sample = 0;
-      
-      if (mParent->nextSampleId < mParent->totalSamples) {
-        sample = data[mParent->nextSampleId++];
-        mParent->samplesProcessed++;
-      }
-      
-      *stream++ = sample;
+    }
+    else {
+      // samplesRead++;
+      // LOGI("Got a sample: %.2f", sample);
+      // mParent->dumpfile.write((char*) &sample, sizeof(float));
     }
     
-    if (mParent->mNumChannels == 1) {
-      *stream++ = sample;
-    }
+    *stream++ = sample;
+    // *stream++ = 0;
   }
   
-  if (mParent->nextSampleId >= mParent->totalSamples) {
-    mParent->isPlaying = false;
-    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", mParent->samplesProcessed, mParent->nextSampleId);
-  }
+  // LOGI("Read %d samples", samplesRead);
   
   return DataCallbackResult::Continue;
 }
