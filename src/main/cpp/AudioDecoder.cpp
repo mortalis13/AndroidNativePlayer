@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include <fstream>
-
 #include "logging.h"
 
 
@@ -11,8 +9,6 @@ void AudioDecoder::start() {
   LOGI("start(), Thread ID: %d", std::this_thread::get_id());
   
   this->enabled = true;
-  
-  // this->run();
   
   runThread = std::async(&AudioDecoder::run, this);
   // runThread = thread(&AudioDecoder::run, this);
@@ -22,12 +18,6 @@ void AudioDecoder::start() {
 
 void AudioDecoder::run() {
   LOGI("run(), Thread ID: %d", std::this_thread::get_id());
-  // ofstream dumpfile;
-  // string dumppath = "/storage/emulated/0/_temp/dump_f.wav";
-  // dumpfile.open(dumppath, ios::binary);
-  // if (!dumpfile.good()) {
-  //   LOGE("Could not open dump file for writing");
-  // }
   
   // Prepare to read data
   int result;
@@ -87,15 +77,11 @@ void AudioDecoder::run() {
           bool pushed = this->dataQ->push(sample);
           if (!pushed) {
             continue;
-            // LOGE("FULL QUEUE");
-            // goto end;
           }
           
           samplesWritten++;
           pushedBytes += sizeof(float);
         }
-        
-        // LOGI("Written %d samples", samplesWritten);
         
         bytesWritten += bytesToWrite;
         av_freep(&buffer);
@@ -112,8 +98,6 @@ void AudioDecoder::run() {
   av_frame_unref(decodedFrame);
   av_frame_free(&decodedFrame);
   this->cleanup();
-  
-  // dumpfile.close();
 }
 
 

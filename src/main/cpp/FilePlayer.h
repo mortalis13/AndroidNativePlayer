@@ -53,9 +53,6 @@ public:
   void play();
 
   ifstream file;
-  
-  ofstream dumpfile;
-  string dumppath = "/storage/emulated/0/_temp/dump.wav";
 
 private:
 

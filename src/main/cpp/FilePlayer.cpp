@@ -45,11 +45,6 @@ oboe::Result FilePlayer::open() {
     LOGE("Failed to open stream. Error: %s", convertToText(result));
   }
   
-  dumpfile.open(dumppath, ios::binary);
-  if (!dumpfile.good()) {
-    LOGE("Could not open dump file for writing");
-  }
-  
   return result;
 }
 
@@ -62,8 +57,6 @@ oboe::Result FilePlayer::stop() {
 }
 
 oboe::Result FilePlayer::close() {
-  LOGI("Player closed");
-  dumpfile.close();
   return mStream->close();
 }
 
@@ -82,9 +75,6 @@ bool FilePlayer::loadFile(string audioPath) {
   this->decoder->setChannelCount(mStream->getChannelCount());
   this->decoder->setSampleRate(mStream->getSampleRate());
   int result = this->decoder->initForFile(audioPath);
-  
-  // this->decoder->enabled = true;
-  // this->decoder->run();
   
   if (result == -1) {
     return false;
@@ -247,27 +237,17 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
   }
   
   float* stream = (float*) audioData;
-  int samplesRead = 0;
   
   for (int i = 0; i < numFrames * kChannelCount; i++) {
     float sample = 0;
     
     bool popped = mParent->dataQ.pop(sample);
     if (!popped) {
-      // LOGE("EMPTY QUEUE");
       sample = 0;
-    }
-    else {
-      // samplesRead++;
-      // LOGI("Got a sample: %.2f", sample);
-      // mParent->dumpfile.write((char*) &sample, sizeof(float));
     }
     
     *stream++ = sample;
-    // *stream++ = 0;
   }
-  
-  // LOGI("Read %d samples", samplesRead);
   
   return DataCallbackResult::Continue;
 }
