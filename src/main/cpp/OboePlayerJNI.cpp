@@ -8,7 +8,7 @@
 
 #include <android/log.h>
 
-#include "logging.h"
+#include "utils/logging.h"
 #include "FilePlayer.h"
 
 

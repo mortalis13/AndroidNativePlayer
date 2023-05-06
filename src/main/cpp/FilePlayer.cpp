@@ -12,7 +12,7 @@
 
 #include <resampler/MultiChannelResampler.h>
 
-#include "logging.h"
+#include "utils/logging.h"
 
 using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
