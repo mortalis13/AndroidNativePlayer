@@ -5,31 +5,30 @@
 #include "logging.h"
 
 
-constexpr int kInternalBufferSize = 1152; // Use MP3 block size. https://wiki.hydrogenaud.io/index.php?title=MP3
-
-
 int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t channelCount, int32_t sampleRate) {
   LOGI("Decoder: FFMpeg");
   int result = -1;
 
-  // Create a buffer for FFmpeg to use for decoding (freed in the custom deleter below)
-  auto buffer = reinterpret_cast<uint8_t*>(av_malloc(kInternalBufferSize));
+  AVFormatContext *formatContext0 = avformat_alloc_context();
+  unique_ptr<AVFormatContext, decltype(&avformat_free_context)> formatContext {
+      formatContext0,
+      &avformat_free_context
+  };
   
-  AVFormatContext *formatContext = NULL;
-  result = avformat_open_input(&formatContext, filePath.c_str(), NULL, NULL);
+  result = avformat_open_input(&formatContext0, filePath.c_str(), NULL, NULL);
   if (result != 0) {
     LOGE("Failed to open file. Error code %s", av_err2str(result));
     return result;
   }
   
-  result = avformat_find_stream_info(formatContext, NULL);
+  result = avformat_find_stream_info(formatContext.get(), NULL);
   if (result != 0) {
     LOGE("Failed to find stream info. Error code %s", av_err2str(result));
     return result;
   }
   
   // Obtain the best audio stream to decode
-  AVStream *stream = getBestAudioStream(formatContext);
+  AVStream *stream = getBestAudioStream(formatContext.get());
   if (stream == nullptr || stream->codecpar == nullptr){
       LOGE("Could not find a suitable audio stream to decode");
       return -1;
@@ -110,7 +109,7 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   LOGD("DECODE START");
 
   // While there is more data to read, read it into the avPacket
-  while (av_read_frame(formatContext, &avPacket) == 0){
+  while (av_read_frame(formatContext.get(), &avPacket) == 0){
     if (avPacket.stream_index == stream->index && avPacket.size > 0) {
       // Pass our compressed data into the codec
       result = avcodec_send_packet(codecContext.get(), &avPacket);
@@ -152,7 +151,6 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   }
 
   av_frame_free(&decodedFrame);
-  avformat_close_input(&formatContext);
   
   LOGD("DECODE END");
 
