@@ -101,14 +101,14 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   bytesWritten = 0;
   av_init_packet(&avPacket);
   decodedFrame = av_frame_alloc(); // Stores raw audio data
-  bytesPerSample = av_get_bytes_per_sample((AVSampleFormat)stream->codecpar->format);
+  bytesPerSample = av_get_bytes_per_sample((AVSampleFormat) stream->codecpar->format);
 
   LOGD("Bytes per sample %d", bytesPerSample);
 
   LOGD("DECODE START");
 
   // While there is more data to read, read it into the avPacket
-  while (av_read_frame(formatContext, &avPacket) == 0){
+  while (av_read_frame(formatContext, &avPacket) == 0) {
     if (avPacket.stream_index == stream->index && avPacket.size > 0) {
       // Pass our compressed data into the codec
       result = avcodec_send_packet(codecContext, &avPacket);
@@ -135,16 +135,17 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
           swr_get_delay(swr, decodedFrame->sample_rate) + decodedFrame->nb_samples,
           sampleRate, decodedFrame->sample_rate, AV_ROUND_UP);
 
-      short *buffer1;
-      av_samples_alloc((uint8_t **) &buffer1, nullptr, channelCount, dst_nb_samples, AV_SAMPLE_FMT_FLT, 0);
-      int frame_count = swr_convert(swr, (uint8_t **) &buffer1, dst_nb_samples,
+      short *buffer;
+      av_samples_alloc((uint8_t **) &buffer, nullptr, channelCount, dst_nb_samples, AV_SAMPLE_FMT_FLT, 0);
+      int frame_count = swr_convert(swr, (uint8_t **) &buffer, dst_nb_samples,
                                     (const uint8_t **) decodedFrame->data, decodedFrame->nb_samples);
 
       int64_t bytesToWrite = frame_count * sizeof(float) * channelCount;
-      memcpy(targetData + bytesWritten, buffer1, (size_t)bytesToWrite);
+      memcpy(targetData + bytesWritten, buffer, (size_t) bytesToWrite);
       bytesWritten += bytesToWrite;
-      av_freep(&buffer1);
+      av_freep(&buffer);
 
+      av_frame_unref(decodedFrame);
       av_packet_unref(&avPacket);
     }
   }
@@ -153,6 +154,7 @@ int64_t AudioDecoder::decode(string filePath, uint8_t* targetData, int32_t chann
   result = bytesWritten;
 
   cleanup:
+  av_frame_unref(decodedFrame);
   av_frame_free(&decodedFrame);
   avformat_close_input(&formatContext);
   avcodec_free_context(&codecContext);
