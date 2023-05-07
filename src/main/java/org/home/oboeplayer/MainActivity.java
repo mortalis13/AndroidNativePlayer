@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
-    if (audioPlayer != null) audioPlayer.setupAudio(audioPath);
+    if (audioPlayer != null) audioPlayer.setupAudio();
   }
   
   @Override
@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
   
   public boolean onTouchEvent(MotionEvent event) {
     if (event.getAction() == MotionEvent.ACTION_DOWN) {
-      audioPlayer.play();
+      audioPlayer.play(audioPath);
     }
     return true;
   }

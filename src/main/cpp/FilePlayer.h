@@ -22,13 +22,19 @@ public:
     dataChannels = 0;
     samplesProcessed = 0;
   }
+  
+  ~FilePlayer() {
+    delete decoder;
+  }
+  
+  void init();
 
   oboe::Result open();
   oboe::Result start();
   oboe::Result stop();
   oboe::Result close();
   
-  void play();
+  bool play(string audioPath);
   bool loadFile(string audioPath);
   
   bool loadFileQueueStatic(string audioPath);

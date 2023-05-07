@@ -8,8 +8,6 @@ extern "C" {
 }
 
 #include <string>
-#include <cstdint>
-#include <thread>
 #include <future>
 
 #include "defs.h"
@@ -24,13 +22,17 @@ public:
   AudioDecoder(SharedQueue* dataQ) {
     this->dataQ = dataQ;
     this->enabled = false;
+    this->playing = false;
   }
   
-  int initForFile(string filePath);
+  int loadFile(string filePath);
   void start();
+  void stop();
   
   void run();
+  
   bool enabled;
+  bool playing;
   
   void setChannelCount(int32_t channelCount) {
     this->channelCount = channelCount;
@@ -53,10 +55,11 @@ private:
   void cleanup();
   
   AVFormatContext *formatContext = NULL;
+  AVCodecContext *codecContext = NULL;
+  SwrContext *swr = NULL;
+  
   AVStream *stream;
   AVCodec *codec;
-  AVCodecContext *codecContext = NULL;
-  SwrContext *swr;
   
   SharedQueue* dataQ;
   

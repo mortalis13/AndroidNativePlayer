@@ -1,14 +1,12 @@
 #include "AudioDecoder.h"
 
-#include <memory>
-
 #include "utils/logging.h"
 
 
 void AudioDecoder::start() {
-  LOGI("start(), Thread ID: %d", std::this_thread::get_id());
-  
+  LOGD("AudioDecoder::start()");
   this->enabled = true;
+  this->playing = true;
   
   runThread = std::async(&AudioDecoder::run, this);
   // runThread = thread(&AudioDecoder::run, this);
@@ -16,8 +14,28 @@ void AudioDecoder::start() {
 }
 
 
+void AudioDecoder::stop() {
+  LOGD("AudioDecoder::stop()");
+  
+  this->playing = false;
+  this->enabled = false;
+  
+  if (runThread.valid()) {
+    LOGI("--wating for thread");
+    runThread.wait();
+    LOGI("--after wait");
+  }
+  
+  this->dataQ->reset();
+  LOGI("Queue emptied");
+  
+  this->cleanup();
+  LOGI("Decoder stopped");
+}
+
+
 void AudioDecoder::run() {
-  LOGI("run(), Thread ID: %d", std::this_thread::get_id());
+  LOGD("AudioDecoder::run()");
   
   // Prepare to read data
   int result;
@@ -37,8 +55,8 @@ void AudioDecoder::run() {
   
   LOGD("DECODE START");
   
-  while (true) {
-    if (this->enabled) {
+  while (this->enabled) {
+    if (this->playing) {
       result = av_read_frame(formatContext, &avPacket);
       if (result != 0) break;
       
@@ -81,6 +99,8 @@ void AudioDecoder::run() {
         int pushedBytes = 0;
         
         while (pushedBytes < bytesToWrite) {
+          if (!this->enabled) break;
+
           float sample;
           memcpy(&sample, (uint8_t*) buffer + pushedBytes, sizeof(float));
           bool pushed = this->dataQ->push(sample);
@@ -102,6 +122,7 @@ void AudioDecoder::run() {
   }
   
   this->enabled = false;
+  this->playing = false;
   
   av_frame_unref(decodedFrame);
   av_frame_free(&decodedFrame);
@@ -110,7 +131,7 @@ void AudioDecoder::run() {
 }
 
 
-int AudioDecoder::initForFile(string filePath) {
+int AudioDecoder::loadFile(string filePath) {
   LOGI("Decoder: FFMpeg => %s", filePath.c_str());
   
   int result = -1;
@@ -208,6 +229,7 @@ int AudioDecoder::initForFile(string filePath) {
 
 
 void AudioDecoder::cleanup() {
+  LOGD("AudioDecoder::cleanup()");
   avformat_close_input(&formatContext);
   avcodec_free_context(&codecContext);
   swr_free(&swr);

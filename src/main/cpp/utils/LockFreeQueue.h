@@ -136,6 +136,10 @@ public:
          */
         return writeCounter - readCounter;
     };
+    
+    void reset() {
+      readCounter = writeCounter = 0;
+    }
 
 private:
 

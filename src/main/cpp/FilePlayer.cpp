@@ -23,8 +23,6 @@ constexpr int kMaxCompressionRatio { 12 };
 
 
 oboe::Result FilePlayer::open() {
-  isPlaying = false;
-  
   mDataCallback = make_shared<MyDataCallback>(this);
   mErrorCallback = make_shared<MyErrorCallback>(this);
 
@@ -45,7 +43,16 @@ oboe::Result FilePlayer::open() {
     LOGE("Failed to open stream. Error: %s", convertToText(result));
   }
   
+  this->init();
   return result;
+}
+
+void FilePlayer::init() {
+  isPlaying = false;
+  
+  this->decoder = new AudioDecoder(&dataQ);
+  this->decoder->setChannelCount(mStream->getChannelCount());
+  this->decoder->setSampleRate(mStream->getSampleRate());
 }
 
 oboe::Result FilePlayer::start() {
@@ -60,29 +67,28 @@ oboe::Result FilePlayer::close() {
   return mStream->close();
 }
 
-void FilePlayer::play() {
+
+bool FilePlayer::play(string audioPath) {
+  this->isPlaying = false;
+  this->decoder->stop();
+  
+  bool result = loadFile(audioPath);
+  if (!result) return result;
+  
   this->isPlaying = true;
   this->samplesProcessed = 0;
   this->nextSampleId = 0;
   
   this->decoder->start();
   LOGI("Decoder started");
+
+  return true;
 }
 
-
 bool FilePlayer::loadFile(string audioPath) {
-  // return loadFileStatic(audioPath);
-  
-  this->decoder = new AudioDecoder(&dataQ);
-  this->decoder->setChannelCount(mStream->getChannelCount());
-  this->decoder->setSampleRate(mStream->getSampleRate());
-  int result = this->decoder->initForFile(audioPath);
-  
-  if (result == -1) {
-    return false;
-  }
+  int result = this->decoder->loadFile(audioPath);
+  if (result == -1) return false;
   this->mNumChannels = this->decoder->in_channels;
-
   return true;
 }
 
@@ -123,7 +129,7 @@ void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, obo
 }
 
 
-// -------------
+// --------------------------------------------------------------------
 
 bool FilePlayer::loadFileStatic(string audioPath) {
   inputFile.open(audioPath, ios::binary | ios::ate);
@@ -202,7 +208,8 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
   }
   
   this->mNumChannels = decoder.in_channels;
-
+  
+  delete[] decodedData;
   return true;
 }
 

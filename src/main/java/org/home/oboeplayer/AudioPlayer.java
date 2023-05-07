@@ -7,20 +7,20 @@ public class AudioPlayer {
   }
   
   
-  public void setupAudio(String audioPath) {
-    startAudioStreamNative(audioPath);
+  public void setupAudio() {
+    startAudioStreamNative();
   }
   
-  public void play() {
-    playAudio();
+  public void play(String audioPath) {
+    playAudio(audioPath);
   }
   
   public void stop() {
     stopAudioStreamNative();
   }
   
-  private native int startAudioStreamNative(String audioPath);
+  private native int startAudioStreamNative();
   private native int stopAudioStreamNative();
-  private native int playAudio();
+  private native int playAudio(String audioPath);
   
 }
