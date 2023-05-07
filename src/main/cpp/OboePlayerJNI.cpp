@@ -42,12 +42,8 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj) {
   LOGI(__func__);
   
-  oboe::Result result = sPlayer.open();
-  if (result == oboe::Result::OK) {
-    result = sPlayer.start();
-  }
-  
-  return (jint) result;
+  bool result = sPlayer.init();
+  return result ? 0: -1;
 }
 
 

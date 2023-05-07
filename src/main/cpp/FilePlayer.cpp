@@ -2,14 +2,8 @@
 
 #include "FilePlayer.h"
 
-#include <stdlib.h>
-#include <vector>
-#include <algorithm>
-#include <future>
-
 #include <stream/MemInputStream.h>
 #include <wav/WavStreamReader.h>
-
 #include <resampler/MultiChannelResampler.h>
 
 #include "utils/logging.h"
@@ -21,7 +15,24 @@ using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 constexpr int kMaxCompressionRatio { 12 };
 
 
-oboe::Result FilePlayer::open() {
+bool FilePlayer::init() {
+  isPlaying = false;
+  
+  if (!this->open()) return false;
+  if (!this->start()) return false;
+  
+  if (this->decoder != NULL) {
+    this->decoder->stop();
+    delete this->decoder;
+  }
+  this->decoder = new AudioDecoder(&dataQ);
+  this->decoder->setChannelCount(mStream->getChannelCount());
+  this->decoder->setSampleRate(mStream->getSampleRate());
+  
+  return true;
+}
+
+bool FilePlayer::open() {
   mDataCallback = make_shared<MyDataCallback>(this);
   mErrorCallback = make_shared<MyErrorCallback>(this);
 
@@ -37,25 +48,21 @@ oboe::Result FilePlayer::open() {
   builder.setSampleRate(48000);
   builder.setSampleRateConversionQuality(SampleRateConversionQuality::Medium);
 
-  oboe::Result result = builder.openStream(mStream);
+  auto result = builder.openStream(mStream);
   if (result != Result::OK) {
     LOGE("Failed to open stream. Error: %s", convertToText(result));
+    return false;
   }
-  
-  this->init();
-  return result;
+  return true;
 }
 
-void FilePlayer::init() {
-  isPlaying = false;
-  
-  this->decoder = new AudioDecoder(&dataQ);
-  this->decoder->setChannelCount(mStream->getChannelCount());
-  this->decoder->setSampleRate(mStream->getSampleRate());
-}
-
-oboe::Result FilePlayer::start() {
-  return mStream->requestStart();
+bool FilePlayer::start() {
+  auto result = mStream->requestStart();
+  if (result != Result::OK) {
+    LOGE("Failed to start stream. Error: %s", convertToText(result));
+    return false;
+  }
+  return true;
 }
 
 oboe::Result FilePlayer::stop() {
@@ -124,18 +131,16 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
 
 void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
   LOGE("%s() - error = %s", __func__, oboe::convertToText(error));
-  if (mParent->open() == Result::OK) {
-    mParent->start();
-  }
+  mParent->init();
 }
 
 
 // --------------------------------------------------------------------
 
 bool FilePlayer::loadFileStatic(string audioPath) {
-  inputFile.open(audioPath, ios::binary | ios::ate);
-  int fileSize = inputFile.tellg();
-  inputFile.close();
+  ifstream file(audioPath, ios::binary | ios::ate);
+  int fileSize = file.tellg();
+  file.close();
   
   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
   auto decodedData = new uint8_t[maximumDataSizeInBytes];
@@ -184,9 +189,9 @@ void FilePlayer::writeAudioStatic(float* stream, int32_t numFrames) {
 
 
 bool FilePlayer::loadFileQueueStatic(string audioPath) {
-  inputFile.open(audioPath, ios::binary | ios::ate);
-  int fileSize = inputFile.tellg();
-  inputFile.close();
+  ifstream file(audioPath, ios::binary | ios::ate);
+  int fileSize = file.tellg();
+  file.close();
   
   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
   auto decodedData = new uint8_t[maximumDataSizeInBytes];
@@ -218,22 +223,22 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
 bool FilePlayer::loadFileWav(string audioPath) {
   LOGI("Performance mode: %s", oboe::convertToText(mStream->getPerformanceMode()));
   
-  inputFile.open(audioPath, ios::binary | ios::ate);
+  ifstream file(audioPath, ios::binary | ios::ate);
   
-  if (!inputFile.good()) {
+  if (!file.good()) {
     LOGE("Failed to open file: %s => %s", audioPath.c_str(), strerror(errno));
     return false;
   }
   
-  int size = inputFile.tellg();
+  int size = file.tellg();
   this->totalSamples = size / sizeof(uint16_t);
   LOGI("Size: %d", size);
-  inputFile.seekg(0);
+  file.seekg(0);
   
   unsigned char* buf = new unsigned char[size];
   
-  inputFile.read((char*) buf, size);
-  inputFile.close();
+  file.read((char*) buf, size);
+  file.close();
   
   MemInputStream stream(buf, size);
   WavStreamReader reader(&stream);
