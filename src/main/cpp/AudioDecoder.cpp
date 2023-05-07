@@ -127,19 +127,17 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
     memcpy(targetData + bytesWritten, buffer, (size_t) bytesToWrite);
   }
   else if (this->mode == MODE_BUFFER_QUEUE) {
-    int samplesWritten = 0;
     int pushedBytes = 0;
+    
     while (pushedBytes < bytesToWrite) {
       if (!this->enabled) break;
-
+      
       float sample;
       memcpy(&sample, (uint8_t*) buffer + pushedBytes, sizeof(float));
-      bool pushed = this->dataQ->push(sample);
-      if (!pushed) {
-        continue;
-      }
       
-      samplesWritten++;
+      bool pushed = this->dataQ->push(sample);
+      if (!pushed) continue;
+      
       pushedBytes += sizeof(float);
     }
   }
