@@ -1,10 +1,6 @@
 #define LOG_MODULE_NAME "OboePlayerJNI_"
 
 #include <jni.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include <string>
 
@@ -30,6 +26,8 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
   env->ReleaseStringUTFChars(jaudioPath, audioPathBytes);
   
   bool result = sPlayer.play(audioPath);
+  // bool result = sPlayer.playStatic();
+  
   if (!result) {
     LOGE("Could not properly load audio file. Check the previous logs.");
     return result;
@@ -41,6 +39,8 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
 
 JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj) {
   LOGI(__func__);
+  
+  // sPlayer.loadFileStatic("");
   
   bool result = sPlayer.init();
   return result ? 0: -1;

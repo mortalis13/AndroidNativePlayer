@@ -34,18 +34,17 @@ public:
   bool init();
   bool play(string audioPath);
 
+  bool playStatic();
+  bool loadFileStatic(string audioPath);
+  bool loadFileQueueStatic(string audioPath);
+  bool loadFileWav(string audioPath);
+
 
 private:
   bool loadFile(string audioPath);
   void writeAudio(float* stream, int32_t numFrames);
 
-  // -----
-  bool loadFileQueueStatic(string audioPath);
-  bool loadFileStatic(string audioPath);
-  bool loadFileWav(string audioPath);
-
   void resampleData(int destSampleRate);
-
   void writeAudioStatic(float* stream, int32_t numFrames);
   void writeAudioWav(float* stream, int32_t numFrames);
 

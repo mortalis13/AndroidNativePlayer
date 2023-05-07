@@ -96,7 +96,7 @@ bool FilePlayer::play(string audioPath) {
 bool FilePlayer::loadFile(string audioPath) {
   int result = this->decoder->loadFile(audioPath);
   if (result == -1) return false;
-  this->mNumChannels = this->decoder->in_channels;
+  this->mNumChannels = this->decoder->getDataChannels();
   return true;
 }
 
@@ -115,7 +115,7 @@ void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
 }
 
 
-DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
+DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream* audioStream, void* audioData, int32_t numFrames) {
   if (!mParent->isPlaying) {
     memset(audioData, 0, numFrames * kChannelCount * sizeof(float));
     return DataCallbackResult::Continue;
@@ -129,13 +129,19 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
 }
 
 
-void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
+void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream* oboeStream, oboe::Result error) {
   LOGE("%s() - error = %s", __func__, oboe::convertToText(error));
   mParent->init();
 }
 
 
 // --------------------------------------------------------------------
+bool FilePlayer::playStatic() {
+  this->isPlaying = true;
+  this->samplesProcessed = 0;
+  this->nextSampleId = 0;
+  return true;
+}
 
 bool FilePlayer::loadFileStatic(string audioPath) {
   ifstream file(audioPath, ios::binary | ios::ate);
@@ -145,8 +151,10 @@ bool FilePlayer::loadFileStatic(string audioPath) {
   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
   auto decodedData = new uint8_t[maximumDataSizeInBytes];
   
-  AudioDecoder decoder;
-  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+  AudioDecoder decoder(decodedData);
+  decoder.setChannelCount(mStream->getChannelCount());
+  decoder.setSampleRate(mStream->getSampleRate());
+  int64_t bytesDecoded = decoder.decodeStatic(audioPath);
   if (bytesDecoded == -1) {
     return false;
   }
@@ -157,7 +165,7 @@ bool FilePlayer::loadFileStatic(string audioPath) {
   
   this->mSampleData = std::move(outputBuffer);
   this->totalSamples = numSamples;
-  this->mNumChannels = decoder.in_channels;
+  this->mNumChannels = decoder.getDataChannels();
   
   LOGI("bytesDecoded: %d", bytesDecoded);
   LOGI("numSamples: %d", numSamples);
@@ -196,8 +204,10 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
   const long maximumDataSizeInBytes = kMaxCompressionRatio * fileSize * sizeof(float);
   auto decodedData = new uint8_t[maximumDataSizeInBytes];
   
-  AudioDecoder decoder;
-  int64_t bytesDecoded = decoder.decode(audioPath, decodedData, mStream->getChannelCount(), mStream->getSampleRate());
+  AudioDecoder decoder(decodedData);
+  decoder.setChannelCount(mStream->getChannelCount());
+  decoder.setSampleRate(mStream->getSampleRate());
+  int64_t bytesDecoded = decoder.decodeStatic(audioPath);
   if (bytesDecoded == -1) {
     return false;
   }
@@ -213,7 +223,7 @@ bool FilePlayer::loadFileQueueStatic(string audioPath) {
     dataQ.push(sample);
   }
   
-  this->mNumChannels = decoder.in_channels;
+  this->mNumChannels = decoder.getDataChannels();
   
   delete[] decodedData;
   return true;
@@ -272,7 +282,7 @@ void FilePlayer::resampleData(int destSampleRate) {
   int32_t numOutFramesAllocated = (int32_t) (temp + 0.5);
   numOutFramesAllocated += 8;
 
-  MultiChannelResampler *resampler = MultiChannelResampler::make(mNumChannels, mSampleRate, destSampleRate, MultiChannelResampler::Quality::Medium);
+  MultiChannelResampler* resampler = MultiChannelResampler::make(mNumChannels, mSampleRate, destSampleRate, MultiChannelResampler::Quality::Medium);
   
   float* inputBuffer = mSampleData.get();
   float* outputBuffer = new float[numOutFramesAllocated];

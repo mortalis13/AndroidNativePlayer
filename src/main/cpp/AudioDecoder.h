@@ -15,11 +15,22 @@ extern "C" {
 using namespace std;
 
 
+const int MODE_STATIC_BUFFER = 0;
+const int MODE_BUFFER_QUEUE = 1;
+
+
 class AudioDecoder {
 
 public:
-  AudioDecoder() {}
+  AudioDecoder(uint8_t* targetData) {
+    this->mode = MODE_STATIC_BUFFER;
+    this->targetData = targetData;
+    this->enabled = true;
+    this->playing = true;
+  }
+  
   AudioDecoder(SharedQueue* dataQ) {
+    this->mode = MODE_BUFFER_QUEUE;
     this->dataQ = dataQ;
     this->enabled = false;
     this->playing = false;
@@ -29,11 +40,6 @@ public:
   void start();
   void stop();
   
-  void run();
-  
-  bool enabled;
-  bool playing;
-  
   void setChannelCount(int32_t channelCount) {
     this->channelCount = channelCount;
   }
@@ -42,26 +48,39 @@ public:
     this->sampleRate = sampleRate;
   }
   
-  int64_t decode(string filePath, uint8_t* targetData, int32_t channelCount, int32_t sampleRate);
+  int32_t getDataChannels() {
+    return dataChannels;
+  }
   
-  int32_t in_channels = 0;
-  int32_t channelCount = 0;
-  int32_t sampleRate = 0;
+  int64_t decodeStatic(string filePath);
 
 
 private:
   static void printCodecParameters(AVCodecParameters* params);
   
+  void run();
   void cleanup();
+  int64_t decodeFrames();
+  void saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesToWrite);
   
-  AVFormatContext *formatContext = NULL;
-  AVCodecContext *codecContext = NULL;
-  SwrContext *swr = NULL;
+  bool enabled;
+  bool playing;
   
-  AVStream *stream;
-  AVCodec *codec;
+  int mode;
   
-  SharedQueue* dataQ;
+  int32_t channelCount = 0;
+  int32_t sampleRate = 0;
+  int32_t dataChannels = 0;
+  
+  AVFormatContext* formatContext = NULL;
+  AVCodecContext* codecContext = NULL;
+  SwrContext* swr = NULL;
+  
+  AVStream* stream = NULL;
+  AVCodec* codec = NULL;
+  
+  SharedQueue* dataQ = NULL;
+  uint8_t* targetData = NULL;
   
   // thread runThread;
   future<void> runThread;
