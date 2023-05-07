@@ -8,7 +8,6 @@ extern "C" {
 }
 
 #include <string>
-#include <fstream>
 #include <future>
 
 #include "defs.h"
@@ -85,10 +84,6 @@ private:
   
   // thread runThread;
   future<void> runThread;
-  
-  ofstream dumpfile;
-  string dumppath = "/tmp/dump.wav";  // replaced of audio file loading
-  bool dumpOutput = true;
   
 };
 

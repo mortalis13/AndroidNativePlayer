@@ -7,8 +7,6 @@
 
 void AudioDecoder::start() {
   LOGD("AudioDecoder::start()");
-  if (dumpOutput) {LOGI("Opening dump file '%s'", dumppath.c_str()); dumpfile.open(dumppath, ios::binary);}
-  
   this->enabled = true;
   this->playing = true;
   
@@ -120,8 +118,6 @@ int64_t AudioDecoder::decodeFrames() {
   av_frame_unref(decodedFrame);
   av_frame_free(&decodedFrame);
   
-  if (dumpOutput) dumpfile.close();
-  
   return bytesWritten;
 }
 
@@ -133,7 +129,6 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
   else if (this->mode == MODE_BUFFER_QUEUE) {
     int samplesWritten = 0;
     int pushedBytes = 0;
-    
     while (pushedBytes < bytesToWrite) {
       if (!this->enabled) break;
 
@@ -144,8 +139,6 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
         continue;
       }
       
-      if (dumpOutput) dumpfile.write((char*) &sample, sizeof(float));
-      
       samplesWritten++;
       pushedBytes += sizeof(float);
     }
@@ -154,8 +147,6 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
 
 
 int AudioDecoder::loadFile(string filePath) {
-  if (dumpOutput) dumppath = filePath + "_dump.wav";
-  
   LOGI("Decoder: FFMpeg => %s", filePath.c_str());
   int result = -1;
   
