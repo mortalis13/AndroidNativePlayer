@@ -1,3 +1,5 @@
+#define LOG_MODULE_NAME "AudioDecoder_"
+
 #include "AudioDecoder.h"
 
 #include "utils/logging.h"

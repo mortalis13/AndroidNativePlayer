@@ -1,11 +1,11 @@
+#define LOG_MODULE_NAME "FilePlayer_"
+
 #include "FilePlayer.h"
 
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
 #include <future>
-
-#include <android/log.h>
 
 #include <stream/MemInputStream.h>
 #include <wav/WavStreamReader.h>
@@ -18,7 +18,6 @@ using namespace parselib;
 using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
 
-static const char *TAG = "FilePlayer";
 constexpr int kMaxCompressionRatio { 12 };
 
 
@@ -124,7 +123,7 @@ DataCallbackResult FilePlayer::MyDataCallback::onAudioReady(AudioStream *audioSt
 
 
 void FilePlayer::MyErrorCallback::onErrorAfterClose(AudioStream *oboeStream, oboe::Result error) {
-  __android_log_print(ANDROID_LOG_ERROR, TAG, "%s() - error = %s", __func__, oboe::convertToText(error));
+  LOGE("%s() - error = %s", __func__, oboe::convertToText(error));
   if (mParent->open() == Result::OK) {
     mParent->start();
   }
@@ -179,7 +178,7 @@ void FilePlayer::writeAudioStatic(float* stream, int32_t numFrames) {
   
   if (this->nextSampleId >= this->totalSamples) {
     this->isPlaying = false;
-    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
+    LOGI("samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
   }
 }
 
@@ -222,13 +221,13 @@ bool FilePlayer::loadFileWav(string audioPath) {
   inputFile.open(audioPath, ios::binary | ios::ate);
   
   if (!inputFile.good()) {
-    __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open file: %s => %s", audioPath.c_str(), strerror(errno));
+    LOGE("Failed to open file: %s => %s", audioPath.c_str(), strerror(errno));
     return false;
   }
   
   int size = inputFile.tellg();
   this->totalSamples = size / sizeof(uint16_t);
-  __android_log_print(ANDROID_LOG_INFO, TAG, "Size: %d", size);
+  LOGI("Size: %d", size);
   inputFile.seekg(0);
   
   unsigned char* buf = new unsigned char[size];
@@ -241,7 +240,7 @@ bool FilePlayer::loadFileWav(string audioPath) {
   reader.parse();
   
   this->mNumChannels = reader.getNumChannels();
-  __android_log_print(ANDROID_LOG_INFO, TAG, "Audio channels: %d", this->mNumChannels);
+  LOGI("Audio channels: %d", this->mNumChannels);
   
   reader.positionToAudio();
 
@@ -259,10 +258,10 @@ bool FilePlayer::loadFileWav(string audioPath) {
 
 void FilePlayer::resampleData(int destSampleRate) {
   if (mSampleRate == destSampleRate) {
-    __android_log_print(ANDROID_LOG_INFO, TAG, "No need to resemple from %d to %d", mSampleRate, destSampleRate);
+    LOGI("No need to resemple from %d to %d", mSampleRate, destSampleRate);
     return;
   }
-  __android_log_print(ANDROID_LOG_INFO, TAG, "Resampling from %d to %d", mSampleRate, destSampleRate);
+  LOGI("Resampling from %d to %d", mSampleRate, destSampleRate);
   
   double temp = ((double) mNumSamples * (double) destSampleRate) / (double) mSampleRate;
   int32_t numOutFramesAllocated = (int32_t) (temp + 0.5);
@@ -321,6 +320,6 @@ void FilePlayer::writeAudioWav(float* stream, int32_t numFrames) {
   
   if (this->nextSampleId >= this->totalSamples) {
     this->isPlaying = false;
-    __android_log_print(ANDROID_LOG_INFO, TAG, "samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
+    LOGI("samplesProcessed: %d, last sample ID: %d", this->samplesProcessed, this->nextSampleId);
   }
 }
