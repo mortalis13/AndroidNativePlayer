@@ -2,7 +2,6 @@
 #define FILE_PLAYER_H
 
 #include <string>
-#include <fstream>
 
 #include "oboe/Oboe.h"
 
@@ -16,10 +15,7 @@ using namespace oboe;
 class FilePlayer {
 public:
   FilePlayer() {
-    mSampleData = nullptr;
     isPlaying = false;
-    dataChannels = 0;
-    samplesProcessed = 0;
   }
   
   ~FilePlayer() {
@@ -34,36 +30,17 @@ public:
   bool init();
   bool play(string audioPath);
 
-  bool playStatic();
-  bool loadFileStatic(string audioPath);
-  bool loadFileQueueStatic(string audioPath);
-  bool loadFileWav(string audioPath);
-
 
 private:
   bool loadFile(string audioPath);
   void writeAudio(float* stream, int32_t numFrames);
 
-  void resampleData(int destSampleRate);
-  void writeAudioStatic(float* stream, int32_t numFrames);
-  void writeAudioWav(float* stream, int32_t numFrames);
-
   static constexpr int kChannelCount = 2;
 
   AudioDecoder* decoder = NULL;
   SharedQueue dataQ;
-  unique_ptr<float[]> mSampleData;
 
   bool isPlaying;
-  int dataChannels;
-
-  int samplesProcessed;
-  int totalSamples;
-  int nextSampleId;
-
-  int32_t mNumChannels;
-  int32_t mSampleRate;
-  int32_t mNumSamples;
 
 
   class MyDataCallback;
