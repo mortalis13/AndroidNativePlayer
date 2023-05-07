@@ -60,6 +60,8 @@ oboe::Result FilePlayer::start() {
 }
 
 oboe::Result FilePlayer::stop() {
+  this->isPlaying = false;
+  this->decoder->stop();
   return mStream->requestStop();
 }
 
