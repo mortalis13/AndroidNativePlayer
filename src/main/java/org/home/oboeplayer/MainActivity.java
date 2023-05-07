@@ -97,7 +97,8 @@ public class MainActivity extends AppCompatActivity {
   }
   
   public boolean onTouchEvent(MotionEvent event) {
-    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+    int action = event.getActionMasked();
+    if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
       audioPlayer.play(audioPath);
     }
     return true;
