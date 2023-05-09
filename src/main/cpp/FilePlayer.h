@@ -16,6 +16,7 @@ class FilePlayer {
 public:
   FilePlayer() {
     isPlaying = false;
+    dataQ = SharedQueue(2 << 19);
   }
   
   ~FilePlayer() {
@@ -35,6 +36,10 @@ private:
   bool loadFile(string audioPath);
   void writeAudio(float* stream, int32_t numFrames);
 
+  void emptyQueue();
+
+
+private:
   static constexpr int kChannelCount = 2;
 
   AudioDecoder* decoder = NULL;

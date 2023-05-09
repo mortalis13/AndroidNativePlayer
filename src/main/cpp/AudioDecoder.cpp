@@ -28,15 +28,13 @@ void AudioDecoder::stop() {
     LOGI("--after wait");
   }
   
-  this->dataQ->reset();
-  LOGI("Queue emptied");
-  
   this->cleanup();
   LOGI("Decoder stopped");
 }
 
 
 void AudioDecoder::run() {
+  // Decoder thread
   LOGD("AudioDecoder::run()");
   this->decodeFrames();
   LOGI("Decoder thread ended");
@@ -44,7 +42,6 @@ void AudioDecoder::run() {
 
 
 int64_t AudioDecoder::decodeFrames() {
-  // Prepare to read data
   int result;
   AVPacket avPacket; // Stores compressed audio data
   av_init_packet(&avPacket);
@@ -135,7 +132,7 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
       float sample;
       memcpy(&sample, (uint8_t*) buffer + pushedBytes, sizeof(float));
       
-      bool pushed = this->dataQ->push(sample);
+      bool pushed = this->dataQ->try_enqueue(sample);
       if (!pushed) continue;
       
       pushedBytes += sizeof(float);

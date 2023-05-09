@@ -69,6 +69,7 @@ oboe::Result FilePlayer::close() {
 bool FilePlayer::play(string audioPath) {
   this->isPlaying = false;
   this->decoder->stop();
+  this->emptyQueue();
   
   bool result = loadFile(audioPath);
   if (!result) return result;
@@ -81,6 +82,14 @@ bool FilePlayer::play(string audioPath) {
   return true;
 }
 
+
+void FilePlayer::emptyQueue() {
+  float sample;
+  while (this->dataQ.try_dequeue(sample)) {}
+  LOGI("Queue emptied");
+}
+
+
 bool FilePlayer::loadFile(string audioPath) {
   int result = this->decoder->loadFile(audioPath);
   if (result == -1) return false;
@@ -89,12 +98,12 @@ bool FilePlayer::loadFile(string audioPath) {
 
 
 void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
+  // Audio thread
   for (int i = 0; i < numFrames * kChannelCount; i++) {
     float sample = 0;
     
-    bool popped = this->dataQ.pop(sample);
-    if (!popped) {
-      sample = 0;
+    if (this->isPlaying) {
+      bool popped = this->dataQ.try_dequeue(sample);
     }
     
     *stream++ = sample;

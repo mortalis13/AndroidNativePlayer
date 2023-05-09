@@ -1,0 +1,1 @@
+**ReaderWriterQueue** lock-free queue implementation is taken from https://github.com/cameron314/readerwriterqueue, introduced by the article [A Fast Lock-Free Queue for C++](https://moodycamel.com/blog/2013/a-fast-lock-free-queue-for-c++.htm).

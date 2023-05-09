@@ -1,3 +1,3 @@
-#include "utils/LockFreeQueue.h"
+#include "utils/readerwriterqueue.h"
 
-typedef LockFreeQueue<float, 2 << 19> SharedQueue;
+typedef moodycamel::ReaderWriterQueue<float> SharedQueue;
