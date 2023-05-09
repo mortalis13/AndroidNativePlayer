@@ -37,3 +37,5 @@ set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${FFMPEG_DIR}/lib/
 
 
 target_link_libraries(oboeplayer oboe::oboe android log avformat avutil avcodec swresample)
+
+target_compile_options(oboeplayer PRIVATE -std=c++17 -Wall)
