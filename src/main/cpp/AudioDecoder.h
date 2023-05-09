@@ -24,14 +24,14 @@ class AudioDecoder {
 
 public:
   AudioDecoder(uint8_t* targetData) {
-    this->mode = MODE_STATIC_BUFFER;
+    this->decodeMode = MODE_STATIC_BUFFER;
     this->targetData = targetData;
     this->enabled = true;
     this->playing = true;
   }
   
   AudioDecoder(SharedQueue* dataQ) {
-    this->mode = MODE_BUFFER_QUEUE;
+    this->decodeMode = MODE_BUFFER_QUEUE;
     this->dataQ = dataQ;
     this->enabled = false;
     this->playing = false;
@@ -57,7 +57,8 @@ public:
 
 
 private:
-  static void printCodecParameters(AVCodecParameters* params);
+  static void printCodecParameters(AVCodecParameters* codecParams);
+  static void printResamplerParameters(AVStream* audioStream, AVChannelLayout outChannelLayout, int32_t outSampleRate, AVSampleFormat outSampleFormat);
   
   void run();
   void cleanup();
@@ -67,7 +68,7 @@ private:
   bool enabled;
   bool playing;
   
-  int mode;
+  int decodeMode;
   
   int32_t channelCount = 0;
   int32_t sampleRate = 0;
@@ -75,10 +76,10 @@ private:
   
   AVFormatContext* formatContext = NULL;
   AVCodecContext* codecContext = NULL;
-  SwrContext* swr = NULL;
+  SwrContext* swrContext = NULL;
   
-  AVStream* stream = NULL;
-  const AVCodec* codec = NULL;
+  AVStream* audioStream = NULL;
+  const AVCodec* audioCodec = NULL;
   
   SharedQueue* dataQ = NULL;
   uint8_t* targetData = NULL;

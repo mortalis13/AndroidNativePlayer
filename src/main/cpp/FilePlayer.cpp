@@ -92,7 +92,7 @@ void FilePlayer::emptyQueue() {
 
 bool FilePlayer::loadFile(string audioPath) {
   int result = this->decoder->loadFile(audioPath);
-  if (result == -1) return false;
+  if (result < 0) return false;
   return true;
 }
 
@@ -103,7 +103,7 @@ void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
     float sample = 0;
     
     if (this->isPlaying) {
-      bool popped = this->dataQ.pop(sample);
+      this->dataQ.pop(sample);
     }
     
     *stream++ = sample;
