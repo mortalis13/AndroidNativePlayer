@@ -43,9 +43,8 @@ void AudioDecoder::run() {
 
 int64_t AudioDecoder::decodeFrames() {
   int result;
-  AVPacket avPacket; // Stores compressed audio data
-  av_init_packet(&avPacket);
   AVFrame* decodedFrame = av_frame_alloc(); // Stores raw audio data
+  AVPacket* avPacket = av_packet_alloc(); // Stores compressed audio data
 
   int bytesWritten = 0;
 
@@ -62,12 +61,12 @@ int64_t AudioDecoder::decodeFrames() {
   
   while (this->enabled) {
     if (this->playing) {
-      result = av_read_frame(formatContext, &avPacket);
+      result = av_read_frame(formatContext, avPacket);
       if (result != 0) break;
       
-      if (avPacket.stream_index == stream->index && avPacket.size > 0) {
+      if (avPacket->stream_index == stream->index && avPacket->size > 0) {
         // Pass our compressed data into the codec
-        result = avcodec_send_packet(codecContext, &avPacket);
+        result = avcodec_send_packet(codecContext, avPacket);
         if (result != 0) {
           LOGE("avcodec_send_packet error: %s", av_err2str(result));
           this->cleanup();
@@ -79,7 +78,7 @@ int64_t AudioDecoder::decodeFrames() {
         if (result == AVERROR(EAGAIN)) {
           // The codec needs more data before it can decode
           LOGI("avcodec_receive_frame returned EAGAIN");
-          av_packet_unref(&avPacket);
+          av_packet_unref(avPacket);
           continue;
         }
         else if (result != 0) {
@@ -104,7 +103,7 @@ int64_t AudioDecoder::decodeFrames() {
 
         av_freep(&buffer);
         av_frame_unref(decodedFrame);
-        av_packet_unref(&avPacket);
+        av_packet_unref(avPacket);
       }
     }
   }
@@ -173,7 +172,7 @@ int AudioDecoder::loadFile(string filePath) {
   }
 
   printCodecParameters(stream->codecpar);
-  this->dataChannels = stream->codecpar->channels;
+  this->dataChannels = stream->codecpar->ch_layout.nb_channels;
 
   // Find the codec to decode this stream
   codec = avcodec_find_decoder(stream->codecpar->codec_id);
@@ -205,14 +204,12 @@ int AudioDecoder::loadFile(string filePath) {
   }
 
   // prepare resampler
-  int32_t outChannelLayout = (1 << this->channelCount) - 1;
-  LOGD("Channel layout %d", outChannelLayout);
+  AVChannelLayout outChannelLayout;
+  av_channel_layout_default(&outChannelLayout, this->channelCount);
 
   swr = swr_alloc();
-  av_opt_set_int(swr, "in_channel_count", stream->codecpar->channels, 0);
-  av_opt_set_int(swr, "out_channel_count", this->channelCount, 0);
-  av_opt_set_int(swr, "in_channel_layout", stream->codecpar->channel_layout, 0);
-  av_opt_set_int(swr, "out_channel_layout", outChannelLayout, 0);
+  av_opt_set_chlayout(swr, "in_chlayout", &stream->codecpar->ch_layout, 0);
+  av_opt_set_chlayout(swr, "out_chlayout", &outChannelLayout, 0);
   av_opt_set_int(swr, "in_sample_rate", stream->codecpar->sample_rate, 0);
   av_opt_set_int(swr, "out_sample_rate", this->sampleRate, 0);
   av_opt_set_int(swr, "in_sample_fmt", stream->codecpar->format, 0);
@@ -257,8 +254,8 @@ int64_t AudioDecoder::decodeStatic(string filePath) {
 
 void AudioDecoder::printCodecParameters(AVCodecParameters* params) {
   LOGD("Stream properties:");
-  LOGD("Channels: %d", params->channels);
-  LOGD("Channel layout: %" PRId64, params->channel_layout);
+  LOGD("Channels: %d", params->ch_layout.nb_channels);
+  LOGD("Channel layout: order %d, mask %d", params->ch_layout.order, params->ch_layout.u.mask);
   LOGD("Sample rate: %d", params->sample_rate);
   LOGD("Format: %s", av_get_sample_fmt_name((AVSampleFormat) params->format));
   LOGD("Frame size: %d", params->frame_size);

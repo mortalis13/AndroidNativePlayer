@@ -2,6 +2,7 @@
 #define AUDIO_DECODER_H
 
 extern "C" {
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswresample/swresample.h>
 #include <libavutil/opt.h>
@@ -77,7 +78,7 @@ private:
   SwrContext* swr = NULL;
   
   AVStream* stream = NULL;
-  AVCodec* codec = NULL;
+  const AVCodec* codec = NULL;
   
   SharedQueue* dataQ = NULL;
   uint8_t* targetData = NULL;

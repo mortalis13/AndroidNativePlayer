@@ -18,7 +18,7 @@ include_directories(.)
 add_library(oboeplayer SHARED ${APP_SOURCES})
 
 
-# ffmpeg-4.4.3
+# ffmpeg-6.0
 set(FFMPEG_DIR "${CMAKE_CURRENT_LIST_DIR}/ffmpeg/${ANDROID_ABI}")
 include_directories(${FFMPEG_DIR}/include)
 
