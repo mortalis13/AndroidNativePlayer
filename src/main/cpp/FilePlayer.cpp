@@ -85,7 +85,7 @@ bool FilePlayer::play(string audioPath) {
 
 void FilePlayer::emptyQueue() {
   float sample;
-  while (this->dataQ.try_dequeue(sample)) {}
+  while (this->dataQ.pop(sample)) {}
   LOGI("Queue emptied");
 }
 
@@ -103,7 +103,7 @@ void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
     float sample = 0;
     
     if (this->isPlaying) {
-      bool popped = this->dataQ.try_dequeue(sample);
+      bool popped = this->dataQ.pop(sample);
     }
     
     *stream++ = sample;

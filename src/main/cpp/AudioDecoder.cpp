@@ -132,7 +132,7 @@ void AudioDecoder::saveFrame(short* buffer, int64_t bytesWritten, int64_t bytesT
       float sample;
       memcpy(&sample, (uint8_t*) buffer + pushedBytes, sizeof(float));
       
-      bool pushed = this->dataQ->try_enqueue(sample);
+      bool pushed = this->dataQ->push(sample);
       if (!pushed) continue;
       
       pushedBytes += sizeof(float);

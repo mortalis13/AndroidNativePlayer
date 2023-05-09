@@ -16,7 +16,6 @@ class FilePlayer {
 public:
   FilePlayer() {
     isPlaying = false;
-    dataQ = SharedQueue(2 << 19);
   }
   
   ~FilePlayer() {
