@@ -1,7 +1,7 @@
 #include "AudioFilter.h"
 
 
-double AudioFilter::processAudioSample(double xn, uint8_t ch) {
+double PeakingFilter::processAudioSample(double xn, uint8_t ch) {
   double x_z1 = states[ch][0];
   double x_z2 = states[ch][1];
   double y_z1 = states[ch][2];
@@ -28,7 +28,6 @@ double AudioFilter::processAudioSample(double xn, uint8_t ch) {
 
 void PeakingFilter::calculateFilterCoeffs() {
   resetCoeffs();
-  bool constQ = false;
 
   // Non constant Q
   if (!constQ) {

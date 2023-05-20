@@ -25,10 +25,10 @@ inline bool checkFloatUnderflow(double& value) {
 }
 
 
-class AudioFilter {
+class PeakingFilter {
 public:
-  AudioFilter() {}
-  virtual ~AudioFilter() = default;
+  PeakingFilter() {}
+  ~PeakingFilter() {}
 
   void reset() {
     resetStates();
@@ -56,9 +56,9 @@ public:
   }
   
   double processAudioSample(double xn, uint8_t ch);
-
-protected:
-  virtual void calculateFilterCoeffs() = 0;
+  
+private:
+  void calculateFilterCoeffs();
   
   void resetCoeffs() {
     cf_a0 = cf_a1 = cf_a2 = cf_b1 = cf_b2 = cf_c0 = cf_d0 = 0.0;
@@ -74,6 +74,9 @@ protected:
     }
   }
 
+private:
+  static const uint8_t numChannels = 2;
+
   double cf_a0 = 0.0;
   double cf_a1 = 0.0;
   double cf_a2 = 0.0;
@@ -83,8 +86,6 @@ protected:
   double cf_c0 = 0.0;
   double cf_d0 = 0.0;
   
-  static const uint8_t numChannels = 2;
-  
   double states[numChannels][4] = {
     //x_z1 x_z2 y_z1 y_z2
     { 0.0, 0.0, 0.0, 0.0 },
@@ -92,16 +93,11 @@ protected:
   };
   
   double sampleRate = 44100.0;
+  bool constQ = false;
   
   double fc = 100.0;
   double Q = DEFAULT_Q;
   double db = 0.0;
-};
-
-
-class PeakingFilter : public AudioFilter {
-protected:
-  virtual void calculateFilterCoeffs();
 };
 
 #endif //AUDIO_FILTER_H

@@ -53,7 +53,7 @@ private:
   
   bool isPlaying = false;
   
-  AudioFilter* audioFilter = NULL;
+  PeakingFilter* audioFilter = NULL;
   bool isFilterEnabled = false;
   
   shared_ptr<AudioStream> mStream;
