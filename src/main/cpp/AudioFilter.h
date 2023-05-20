@@ -112,7 +112,6 @@ private:
   };
   
   double sampleRate = 44100.0;
-  bool constQ = false;
   
   double fc = 100.0;
   double Q = DEFAULT_Q;
