@@ -19,6 +19,12 @@ bool FilePlayer::init() {
   this->decoder->setChannelCount(mStream->getChannelCount());
   this->decoder->setSampleRate(mStream->getSampleRate());
   
+  this->audioFilter = new PeakingFilter();
+  this->audioFilter->setSampleRate(mStream->getSampleRate());
+  this->audioFilter->setFrequency(100.0);
+  this->audioFilter->setQFactor(1.0);
+  this->audioFilter->setGainDb(-15.0);
+  
   return true;
 }
 
@@ -65,11 +71,22 @@ oboe::Result FilePlayer::close() {
   return mStream->close();
 }
 
+void FilePlayer::enableFilter() {
+  this->audioFilter->reset();
+  this->isFilterEnabled = true;
+}
+
+void FilePlayer::disableFilter() {
+  this->isFilterEnabled = false;
+}
+
 
 bool FilePlayer::play(string audioPath) {
   this->isPlaying = false;
   this->decoder->stop();
   this->emptyQueue();
+  
+  this->audioFilter->reset();
   
   bool result = loadFile(audioPath);
   if (!result) return result;
@@ -99,14 +116,19 @@ bool FilePlayer::loadFile(string audioPath) {
 
 void FilePlayer::writeAudio(float* stream, int32_t numFrames) {
   // Audio thread
-  for (int i = 0; i < numFrames * kChannelCount; i++) {
-    float sample = 0;
-    
-    if (this->isPlaying) {
-      this->dataQ.pop(sample);
+  for (int i = 0; i < numFrames; i++) {
+    for (int ch = 0; ch < kChannelCount; ch++) {
+      float sample = 0;
+      if (this->isPlaying) {
+        this->dataQ.pop(sample);
+      }
+      
+      if (this->isFilterEnabled && this->audioFilter) {
+        sample = this->audioFilter->processAudioSample(sample, ch);
+      }
+      
+      *stream++ = sample;
     }
-    
-    *stream++ = sample;
   }
 }
 

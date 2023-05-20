@@ -6,6 +6,7 @@
 #include "oboe/Oboe.h"
 
 #include "AudioDecoder.h"
+#include "AudioFilter.h"
 #include "defs.h"
 
 using namespace std;
@@ -13,13 +14,16 @@ using namespace oboe;
 
 
 class FilePlayer {
+
+class MyDataCallback;
+class MyErrorCallback;
+
 public:
-  FilePlayer() {
-    isPlaying = false;
-  }
+  FilePlayer() {}
   
   ~FilePlayer() {
     if (decoder != NULL) delete decoder;
+    if (audioFilter != NULL) delete audioFilter;
   }
   
   bool open();
@@ -29,6 +33,9 @@ public:
   
   bool init();
   bool play(string audioPath);
+  
+  void enableFilter();
+  void disableFilter();
 
 
 private:
@@ -43,13 +50,12 @@ private:
 
   AudioDecoder* decoder = NULL;
   SharedQueue dataQ;
-
-  bool isPlaying;
-
-
-  class MyDataCallback;
-  class MyErrorCallback;
-
+  
+  bool isPlaying = false;
+  
+  AudioFilter* audioFilter = NULL;
+  bool isFilterEnabled = false;
+  
   shared_ptr<AudioStream> mStream;
   shared_ptr<MyDataCallback> mDataCallback;
   shared_ptr<MyErrorCallback> mErrorCallback;
@@ -62,6 +68,7 @@ public:
 private:
     FilePlayer *mParent;
 };
+
 
 class MyErrorCallback : public AudioStreamErrorCallback {
 public:

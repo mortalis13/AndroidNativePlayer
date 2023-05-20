@@ -6,16 +6,16 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   android:orientation="vertical"
-  android:background="#444"
 >
   
   <Button
-    android:id="@+id/btn"
+    android:id="@+id/btnTest"
     android:layout_width="match_parent"
     android:layout_height="120dp"
     android:gravity="center"
     android:textSize="26dp"
     android:text="Test"
+    android:background="@color/toggle_button_background"
   />
 
 </LinearLayout>

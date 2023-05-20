@@ -52,6 +52,18 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNativ
   return (jint) ((result1 != oboe::Result::OK) ? result1 : result2);
 }
 
+
+JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_enableFilter(JNIEnv *env, jobject obj) {
+  LOGI(__func__);
+  sPlayer.enableFilter();
+}
+
+
+JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_disableFilter(JNIEnv *env, jobject obj) {
+  LOGI(__func__);
+  sPlayer.disableFilter();
+}
+
 #ifdef __cplusplus
 }
 #endif

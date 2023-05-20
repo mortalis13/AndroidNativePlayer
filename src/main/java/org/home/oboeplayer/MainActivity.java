@@ -3,6 +3,7 @@ package org.home.oboeplayer;
 import android.content.Context;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Button;
 import android.view.MotionEvent;
 import android.view.View;
 import android.Manifest;
@@ -26,7 +27,25 @@ public class MainActivity extends AppCompatActivity {
   
   private AudioPlayer audioPlayer;
   
-  private String audioPath;
+  private Button btnTest;
+  
+  // private String audioPath;
+  
+  // private String audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
+  // private String audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
+  // private String audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
+  // private String audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
+  // private String audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
+  // private String audioPath = "/storage/emulated/0/_temp/guitarA.wav";
+  
+  // private String audioPath = "/storage/emulated/0/_temp/CLAP.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/FUNKY_HOUSE.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/clap-mono.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/01. Italian Serenade.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/serenade-mono.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/Battle 2.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/01. Sweet Home Alabama.mp3";
+  private String audioPath = "/storage/emulated/0/_temp/02. Corporal Jigsore Quandary.mp3";
 
   
   @Override
@@ -89,22 +108,19 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioPlayer = new AudioPlayer();
     audioPlayer.setupAudio();
-    
-    // audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
-    // audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
-    // audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
-    // audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
-    // audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
-    // audioPath = "/storage/emulated/0/_temp/guitarA.wav";
-    
-    // audioPath = "/storage/emulated/0/_temp/CLAP.mp3";
-    // audioPath = "/storage/emulated/0/_temp/FUNKY_HOUSE.mp3";
-    // audioPath = "/storage/emulated/0/_temp/clap-mono.mp3";
-    audioPath = "/storage/emulated/0/_temp/01. Italian Serenade.mp3";
   }
   
   private void configUI() {
+    btnTest = findViewById(R.id.btnTest);
     
+    btnTest.setOnTouchListener((v, e) -> {
+      int action = e.getActionMasked();
+      if (action == MotionEvent.ACTION_DOWN) {
+        v.setSelected(!v.isSelected());
+        audioPlayer.toggleFilter();
+      }
+      return true;
+    });
   }
   
   public boolean onTouchEvent(MotionEvent event) {

@@ -7,6 +7,7 @@ set (
   APP_SOURCES
   
   AudioDecoder.cpp
+  AudioFilter.cpp
   FilePlayer.cpp
   OboePlayerJNI.cpp
 )

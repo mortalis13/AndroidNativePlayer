@@ -4,5 +4,6 @@
       <item name="windowActionBar">false</item>
       <item name="windowNoTitle">true</item>
       <item name="android:forceDarkAllowed">false</item>
+      <item name="android:windowBackground">#444</item>
     </style>
 </resources>
