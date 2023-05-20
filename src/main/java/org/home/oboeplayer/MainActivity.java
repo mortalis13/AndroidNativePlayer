@@ -46,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
   // private String audioPath = "/storage/emulated/0/_temp/Battle 2.mp3";
   // private String audioPath = "/storage/emulated/0/_temp/01. Sweet Home Alabama.mp3";
   // private String audioPath = "/storage/emulated/0/_temp/02. Corporal Jigsore Quandary.mp3";
-  private String audioPath = "/storage/emulated/0/_temp/05. Dismembered.mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/05. Dismembered.mp3";
+  private String audioPath = "/storage/emulated/0/_temp/09. I Wanna Be Somebody (W.A.S.P. cover).mp3";
 
   
   @Override
@@ -123,12 +124,62 @@ public class MainActivity extends AppCompatActivity {
       return true;
     });
   }
+
+
+  boolean moveStarted;
+  boolean movingX;
+  boolean movingY;
+  
+  float moveStartX;
+  float moveStartY;
   
   public boolean onTouchEvent(MotionEvent event) {
     int action = event.getActionMasked();
-    if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-      audioPlayer.play(audioPath);
+    float x = event.getX();
+    float y = event.getY();
+    
+    if (action == MotionEvent.ACTION_DOWN /*|| action == MotionEvent.ACTION_POINTER_DOWN*/) {
+      moveStartX = x;
+      moveStartY = y;
+      movingX = false;
+      movingY = false;
     }
+    else if (action == MotionEvent.ACTION_UP) {
+      if (!moveStarted) {
+        audioPlayer.play(audioPath);
+      }
+      moveStarted = false;
+    }
+    else if (action == MotionEvent.ACTION_MOVE) {
+      // Change frequency when moving by X and gain when moving by Y
+      // Lock one direction after movement started
+      moveStarted = true;
+      
+      float deltaX = x - moveStartX;
+      float deltaY = y - moveStartY;
+      
+      if (movingX || !movingY && Math.abs(deltaX) >= Math.abs(deltaY)) {
+        movingX = true;
+        
+        float hz = deltaX / 10;
+        if (Math.abs((int) hz) > 0) {
+          if (Math.abs(hz) > 5) hz *= 10;  // boost
+          audioPlayer.addFrequency(hz);
+          moveStartX = x;
+        }
+      }
+      else {
+        movingY = true;
+        
+        float db = -deltaY / 10;
+        if (Math.abs((int) db) > 0) {
+          db /= 10;
+          audioPlayer.addGain(db);
+          moveStartY = y;
+        }
+      }
+    }
+    
     return true;
   }
   

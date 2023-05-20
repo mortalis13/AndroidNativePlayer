@@ -29,8 +29,13 @@ public class AudioPlayer {
   
   private native int startAudioStreamNative();
   private native int stopAudioStreamNative();
+  
   private native int playAudio(String audioPath);
+  
   private native void enableFilter();
   private native void disableFilter();
+  
+  public native void addFrequency(float hz);
+  public native void addGain(float db);
   
 }

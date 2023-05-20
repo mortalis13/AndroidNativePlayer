@@ -4,11 +4,17 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "utils/logging.h"
 
 const double kSmallestPositiveFloatValue = 1.175494351e-38;         /* min positive value */
 const double kSmallestNegativeFloatValue = -1.175494351e-38;        /* min negative value */
 const double kPi = 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899;
+
 const double DEFAULT_Q = 0.707;
+const double MIN_FREQUENCY = 20.0;
+const double MAX_FREQUENCY = 20480.0;
+const double MIN_GAIN = -20.0;
+const double MAX_GAIN = 20.0;
 
 
 inline bool checkFloatUnderflow(double& value) {
@@ -39,20 +45,33 @@ public:
     calculateFilterCoeffs();
   }
   
-  void setFrequency(double frequency) {
-    this->fc = frequency;
-    calculateFilterCoeffs();
-  }
-  
   void setQFactor(double qFactor) {
     if (qFactor <= 0) qFactor = DEFAULT_Q;
     this->Q = qFactor;
     calculateFilterCoeffs();
   }
+  double getQFactor() {
+    return this->Q;
+  }
+  
+  void setFrequency(double frequency) {
+    frequency = fmin(fmax(frequency, MIN_FREQUENCY), MAX_FREQUENCY);
+    if (this->fc == frequency) return;
+    this->fc = frequency;
+    calculateFilterCoeffs();
+  }
+  double getFrequency() {
+    return this->fc;
+  }
   
   void setGainDb(double db) {
+    db = fmin(fmax(db, MIN_GAIN), MAX_GAIN);
+    if (this->db == db) return;
     this->db = db;
     calculateFilterCoeffs();
+  }
+  double getGainDb() {
+    return this->db;
   }
   
   double processAudioSample(double xn, uint8_t ch);

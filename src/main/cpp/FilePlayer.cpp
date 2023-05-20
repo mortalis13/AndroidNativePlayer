@@ -21,9 +21,14 @@ bool FilePlayer::init() {
   
   this->audioFilter = new PeakingFilter();
   this->audioFilter->setSampleRate(mStream->getSampleRate());
-  this->audioFilter->setFrequency(100.0);
   this->audioFilter->setQFactor(1.0);
-  this->audioFilter->setGainDb(-15.0);
+  this->audioFilter->setFrequency(100.0);
+  this->audioFilter->setGainDb(-10.0);
+  
+  LOGI("Filter is set up for %.2f Hz, %.2f dB, %.2f Q",
+    this->audioFilter->getFrequency(),
+    this->audioFilter->getGainDb(),
+    this->audioFilter->getQFactor());
   
   return true;
 }
@@ -78,6 +83,16 @@ void FilePlayer::enableFilter() {
 
 void FilePlayer::disableFilter() {
   this->isFilterEnabled = false;
+}
+
+void FilePlayer::addFilterFrequency(float hz) {
+  double freq = this->audioFilter->getFrequency() + hz;
+  this->audioFilter->setFrequency(freq);
+}
+
+void FilePlayer::addFilterGain(float db) {
+  double gain = this->audioFilter->getGainDb() + db;
+  this->audioFilter->setGainDb(gain);
 }
 
 

@@ -36,6 +36,9 @@ public:
   
   void enableFilter();
   void disableFilter();
+  
+  void addFilterFrequency(float hz);
+  void addFilterGain(float db);
 
 
 private:
