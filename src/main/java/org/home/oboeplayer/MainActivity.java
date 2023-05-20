@@ -2,17 +2,14 @@ package org.home.oboeplayer;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.widget.TextView;
 import android.widget.Button;
 import android.view.MotionEvent;
-import android.view.View;
 import android.Manifest;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.Settings;
 import android.content.Intent;
 import android.os.Build;
-import android.content.pm.PackageManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -23,13 +20,18 @@ import static org.home.oboeplayer.Fun.logd;
 
 public class MainActivity extends AppCompatActivity {
 
-  private Context context;
-  
   private AudioPlayer audioPlayer;
   
+  private Context context;
   private Button btnTest;
   
-  // private String audioPath;
+  // Screen touch gestures
+  private boolean moveStarted;
+  private boolean movingX;
+  private boolean movingY;
+  
+  private float moveStartX;
+  private float moveStartY;
   
   // private String audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
   // private String audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
@@ -45,9 +47,9 @@ public class MainActivity extends AppCompatActivity {
   // private String audioPath = "/storage/emulated/0/_temp/serenade-mono.mp3";
   // private String audioPath = "/storage/emulated/0/_temp/Battle 2.mp3";
   // private String audioPath = "/storage/emulated/0/_temp/01. Sweet Home Alabama.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/02. Corporal Jigsore Quandary.mp3";
+  private String audioPath = "/storage/emulated/0/_temp/02. Corporal Jigsore Quandary.mp3";
   // private String audioPath = "/storage/emulated/0/_temp/05. Dismembered.mp3";
-  private String audioPath = "/storage/emulated/0/_temp/09. I Wanna Be Somebody (W.A.S.P. cover).mp3";
+  // private String audioPath = "/storage/emulated/0/_temp/09. I Wanna Be Somebody (W.A.S.P. cover).mp3";
 
   
   @Override
@@ -125,14 +127,6 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-
-  boolean moveStarted;
-  boolean movingX;
-  boolean movingY;
-  
-  float moveStartX;
-  float moveStartY;
-  
   public boolean onTouchEvent(MotionEvent event) {
     int action = event.getActionMasked();
     float x = event.getX();

@@ -3,9 +3,7 @@ project(oboe-player LANGUAGES CXX)
 
 find_package(oboe REQUIRED CONFIG)
 
-set (
-  APP_SOURCES
-  
+set (APP_SOURCES
   AudioDecoder.cpp
   AudioFilter.cpp
   FilePlayer.cpp
