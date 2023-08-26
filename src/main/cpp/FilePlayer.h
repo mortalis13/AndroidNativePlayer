@@ -33,6 +33,7 @@ public:
   
   bool init();
   bool play(string audioPath);
+  void pause();
   
   void enableFilter();
   void disableFilter();

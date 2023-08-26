@@ -114,6 +114,10 @@ bool FilePlayer::play(string audioPath) {
   return true;
 }
 
+void FilePlayer::pause() {
+  this->isPlaying = false;
+}
+
 
 void FilePlayer::emptyQueue() {
   float sample;

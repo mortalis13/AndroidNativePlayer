@@ -29,10 +29,14 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
   
   if (!result) {
     LOGE("Could not properly load audio file. Check the previous logs.");
-    return result;
   }
   
   return result ? 0: -1;
+}
+
+JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_pauseAudio(JNIEnv *env, jclass obj) {
+  LOGI(__func__);
+  sPlayer.pause();
 }
 
 

@@ -12,7 +12,7 @@ void AudioDecoder::start() {
   
   runThread = std::async(&AudioDecoder::run, this);
   // runThread = thread(&AudioDecoder::run, this);
-  LOGI("Decoder thread stated");
+  LOGI("Decoder thread started");
 }
 
 
@@ -43,7 +43,6 @@ void AudioDecoder::run() {
 
 int64_t AudioDecoder::decodeFrames() {
   int result = -1;
-  int bytesPerSample;
   int bytesWritten = 0;
   
   AVPacket* audioPacket;
@@ -61,9 +60,6 @@ int64_t AudioDecoder::decodeFrames() {
     goto end;
   }
 
-  bytesPerSample = av_get_bytes_per_sample((AVSampleFormat) audioStream->codecpar->format);
-  LOGD("Bytes per sample %d", bytesPerSample);
-  
   // Seek to start
   result = av_seek_frame(formatContext, audioStream->index, 0, AVSEEK_FLAG_BYTE);
   if (result < 0) {
@@ -98,13 +94,13 @@ int64_t AudioDecoder::decodeFrames() {
 
         // Resample
         int64_t swr_delay = swr_get_delay(swrContext, audioFrame->sample_rate);
-        int32_t dst_nb_samples = (int32_t) av_rescale_rnd(swr_delay + audioFrame->nb_samples, sampleRate, audioFrame->sample_rate, AV_ROUND_UP);
+        int32_t dst_nb_samples = (int32_t) av_rescale_rnd(swr_delay + audioFrame->nb_samples, this->sampleRate, audioFrame->sample_rate, AV_ROUND_UP);
         
         short* buffer;
         av_samples_alloc((uint8_t **) &buffer, nullptr, this->channelCount, dst_nb_samples, AV_SAMPLE_FMT_FLT, 0);
         int frame_count = swr_convert(swrContext, (uint8_t **) &buffer, dst_nb_samples, (const uint8_t **) audioFrame->data, audioFrame->nb_samples);
 
-        int64_t bytesToWrite = frame_count * sizeof(float) * this->channelCount;
+        int64_t bytesToWrite = frame_count * this->channelCount * sizeof(float);
         saveFrame(buffer, bytesWritten, bytesToWrite);
         bytesWritten += bytesToWrite;
 
@@ -157,14 +153,14 @@ int AudioDecoder::loadFile(string filePath) {
   
   result = avformat_open_input(&formatContext, filePath.c_str(), NULL, NULL);
   if (result < 0) {
-    LOGE("Failed to open file. Error code %s", av_err2str(result));
+    LOGE("Failed to open file. Error code: %s", av_err2str(result));
     this->cleanup();
     return result;
   }
   
   result = avformat_find_stream_info(formatContext, NULL);
   if (result < 0) {
-    LOGE("Failed to find stream info. Error code %s", av_err2str(result));
+    LOGE("Failed to find stream info. Error code: %s", av_err2str(result));
     this->cleanup();
     return result;
   }
@@ -278,7 +274,8 @@ void AudioDecoder::printCodecParameters(AVCodecParameters* codecParams) {
   LOGD("Channels: %d", codecParams->ch_layout.nb_channels);
   LOGD("Channel layout: order %d, mask %d", codecParams->ch_layout.order, (int) codecParams->ch_layout.u.mask);
   LOGD("Sample rate: %d", codecParams->sample_rate);
-  LOGD("Format: %s", av_get_sample_fmt_name((AVSampleFormat) codecParams->format));
   LOGD("Frame size: %d", codecParams->frame_size);
+  LOGD("Format: %s", av_get_sample_fmt_name((AVSampleFormat) codecParams->format));
+  LOGD("Bytes per sample %d\n", av_get_bytes_per_sample((AVSampleFormat) codecParams->format));
   LOGD("===END Codec params===");
 }

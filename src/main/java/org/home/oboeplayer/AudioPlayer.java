@@ -17,6 +17,10 @@ public class AudioPlayer {
     playAudio(audioPath);
   }
   
+  public void pause() {
+    pauseAudio();
+  }
+  
   public void stop() {
     stopAudioStreamNative();
   }
@@ -31,6 +35,7 @@ public class AudioPlayer {
   private native int stopAudioStreamNative();
   
   private native int playAudio(String audioPath);
+  private native void pauseAudio();
   
   private native void enableFilter();
   private native void disableFilter();

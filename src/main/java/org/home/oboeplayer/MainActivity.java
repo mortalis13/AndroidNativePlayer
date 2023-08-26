@@ -30,26 +30,28 @@ public class MainActivity extends AppCompatActivity {
   private boolean movingX;
   private boolean movingY;
   
+  private boolean playing;
+  
   private float moveStartX;
   private float moveStartY;
   
-  // private String audioPath = "/storage/emulated/0/_temp/ez_snare.wav";
-  // private String audioPath = "/storage/emulated/0/_temp/SnareDrum.wav";
-  // private String audioPath = "/storage/emulated/0/_temp/HiHat_Closed.wav";
-  // private String audioPath = "/storage/emulated/0/_temp/sine_440_hz.wav";
-  // private String audioPath = "/storage/emulated/0/_temp/stereo_sine.wav";
-  // private String audioPath = "/storage/emulated/0/_temp/guitarA.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/ez_snare.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/SnareDrum.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/HiHat_Closed.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/sine_440_hz.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/stereo_sine.wav";
+  // private String audioPath = "/storage/emulated/0/_tests/guitarA.wav";
   
-  // private String audioPath = "/storage/emulated/0/_temp/CLAP.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/FUNKY_HOUSE.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/clap-mono.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/01. Italian Serenade.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/serenade-mono.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/Battle 2.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/01. Sweet Home Alabama.mp3";
-  private String audioPath = "/storage/emulated/0/_temp/02. Corporal Jigsore Quandary.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/05. Dismembered.mp3";
-  // private String audioPath = "/storage/emulated/0/_temp/09. I Wanna Be Somebody (W.A.S.P. cover).mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/CLAP.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/FUNKY_HOUSE.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/clap-mono.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/01. Italian Serenade.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/serenade-mono.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/Battle 2.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/01. Sweet Home Alabama.mp3";
+  private String audioPath = "/storage/emulated/0/_tests/02. Corporal Jigsore Quandary.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/05. Dismembered.mp3";
+  // private String audioPath = "/storage/emulated/0/_tests/09. I Wanna Be Somebody (W.A.S.P. cover).mp3";
 
   
   @Override
@@ -140,7 +142,9 @@ public class MainActivity extends AppCompatActivity {
     }
     else if (action == MotionEvent.ACTION_UP) {
       if (!moveStarted) {
-        audioPlayer.play(audioPath);
+        if (!playing) audioPlayer.play(audioPath);
+        else audioPlayer.pause();
+        playing = !playing;
       }
       moveStarted = false;
     }
