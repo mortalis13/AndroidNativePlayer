@@ -1,11 +1,11 @@
-package org.home.oboeplayer;
+package org.home.nativeplayer;
 
 public class AudioPlayer {
   
   private boolean filterEnabled;
   
   static {
-    System.loadLibrary("oboeplayer");
+    System.loadLibrary("nativeplayer");
   }
   
   

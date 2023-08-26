@@ -18,7 +18,7 @@ using namespace std;
 static FilePlayer sPlayer;
 
 
-JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *env, jclass obj, jstring jaudioPath) {
+JNIEXPORT jint JNICALL Java_org_home_nativeplayer_AudioPlayer_playAudio(JNIEnv *env, jclass obj, jstring jaudioPath) {
   LOGI(__func__);
   
   const char* audioPathBytes = env->GetStringUTFChars(jaudioPath, 0);
@@ -34,13 +34,13 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_playAudio(JNIEnv *en
   return result ? 0: -1;
 }
 
-JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_pauseAudio(JNIEnv *env, jclass obj) {
+JNIEXPORT void JNICALL Java_org_home_nativeplayer_AudioPlayer_pauseAudio(JNIEnv *env, jclass obj) {
   LOGI(__func__);
   sPlayer.pause();
 }
 
 
-JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj) {
+JNIEXPORT jint JNICALL Java_org_home_nativeplayer_AudioPlayer_startAudioStreamNative(JNIEnv *env, jclass obj) {
   LOGI(__func__);
   
   bool result = sPlayer.init();
@@ -48,7 +48,7 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_startAudioStreamNati
 }
 
 
-JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv *env, jobject obj) {
+JNIEXPORT jint JNICALL Java_org_home_nativeplayer_AudioPlayer_stopAudioStreamNative(JNIEnv *env, jobject obj) {
   LOGI(__func__);
   
   oboe::Result result1 = sPlayer.stop();
@@ -57,22 +57,22 @@ JNIEXPORT jint JNICALL Java_org_home_oboeplayer_AudioPlayer_stopAudioStreamNativ
 }
 
 
-JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_enableFilter(JNIEnv *env, jobject obj) {
+JNIEXPORT void JNICALL Java_org_home_nativeplayer_AudioPlayer_enableFilter(JNIEnv *env, jobject obj) {
   sPlayer.enableFilter();
 }
 
 
-JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_disableFilter(JNIEnv *env, jobject obj) {
+JNIEXPORT void JNICALL Java_org_home_nativeplayer_AudioPlayer_disableFilter(JNIEnv *env, jobject obj) {
   sPlayer.disableFilter();
 }
 
 
-JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_addFrequency(JNIEnv *env, jobject obj, jfloat hz) {
+JNIEXPORT void JNICALL Java_org_home_nativeplayer_AudioPlayer_addFrequency(JNIEnv *env, jobject obj, jfloat hz) {
   sPlayer.addFilterFrequency(hz);
 }
 
 
-JNIEXPORT void JNICALL Java_org_home_oboeplayer_AudioPlayer_addGain(JNIEnv *env, jobject obj, jfloat db) {
+JNIEXPORT void JNICALL Java_org_home_nativeplayer_AudioPlayer_addGain(JNIEnv *env, jobject obj, jfloat db) {
   sPlayer.addFilterGain(db);
 }
 

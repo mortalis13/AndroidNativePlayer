@@ -1,4 +1,4 @@
-package org.home.oboeplayer;
+package org.home.nativeplayer;
 
 import android.content.Context;
 import android.util.Log;

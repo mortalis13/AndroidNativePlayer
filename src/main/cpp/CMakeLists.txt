@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4.1)
-project(oboe-player LANGUAGES CXX)
+project(nativeplayer LANGUAGES CXX)
 
 find_package(oboe REQUIRED CONFIG)
 
@@ -7,14 +7,14 @@ set (APP_SOURCES
   AudioDecoder.cpp
   AudioFilter.cpp
   FilePlayer.cpp
-  OboePlayerJNI.cpp
+  PlayerJNI.cpp
 )
 
 message(CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(.)
 
-add_library(oboeplayer SHARED ${APP_SOURCES})
+add_library(nativeplayer SHARED ${APP_SOURCES})
 
 
 # ffmpeg-6.0
@@ -35,6 +35,6 @@ set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${FFMPEG_DIR}/lib/
 # end ffmpeg
 
 
-target_link_libraries(oboeplayer oboe::oboe android log avformat avutil avcodec swresample)
+target_link_libraries(nativeplayer oboe::oboe android log avformat avutil avcodec swresample)
 
-target_compile_options(oboeplayer PRIVATE -std=c++17 -Wall)
+target_compile_options(nativeplayer PRIVATE -std=c++17 -Wall)

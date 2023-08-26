@@ -23,7 +23,7 @@ android {
     // ndkVersion "25.1.8937393"
     
     defaultConfig {
-        namespace "org.home.oboeplayer"
+        namespace "org.home.nativeplayer"
         
         minSdkVersion 30
         targetSdkVersion 33

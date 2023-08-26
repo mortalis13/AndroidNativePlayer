@@ -1,4 +1,4 @@
-package org.home.oboeplayer;
+package org.home.nativeplayer;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -14,8 +14,8 @@ import android.os.Build;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import static org.home.oboeplayer.Fun.log;
-import static org.home.oboeplayer.Fun.logd;
+import static org.home.nativeplayer.Fun.log;
+import static org.home.nativeplayer.Fun.logd;
 
 
 public class MainActivity extends AppCompatActivity {
